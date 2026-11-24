@@ -135,12 +135,10 @@ export function sanitizeSettings(raw: unknown): Settings {
         ? obj.autoZoomOversized
         : DEFAULT_SETTINGS.autoZoomOversized,
     language: lang === 'auto' || lang === 'zh' || lang === 'en' ? lang : DEFAULT_SETTINGS.language,
-    devtoolsRollupHeight:
-      Number.isFinite(Number(obj.devtoolsRollupHeight)) &&
-      Number(obj.devtoolsRollupHeight) >= 28 &&
-      Number(obj.devtoolsRollupHeight) <= 64
-        ? Math.round(Number(obj.devtoolsRollupHeight))
-        : DEFAULT_SETTINGS.devtoolsRollupHeight,
+    devtoolsFloatingBar:
+      typeof obj.devtoolsFloatingBar === 'boolean'
+        ? obj.devtoolsFloatingBar
+        : DEFAULT_SETTINGS.devtoolsFloatingBar,
     devtoolsSplitRatio:
       Number.isFinite(Number(obj.devtoolsSplitRatio)) &&
       Number(obj.devtoolsSplitRatio) >= 0.35 &&

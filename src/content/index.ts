@@ -3,6 +3,7 @@ import { ext } from '../shared/ext';
 import { getBreakpointBadge, normalizeShortcutFromEvent } from '../shared/geometry';
 import { loadAppData, STORAGE_KEYS } from '../shared/storage';
 import type { Preset, RuntimeMessage, ScreenWorkArea, Settings, ViewportMetrics } from '../shared/types';
+import { FloatingDevToolsBar } from './devtoolsBar';
 
 // 仅在顶层窗口运行，避免在 iframe 中重复渲染 Tooltip 或重复响应快捷键
 if (window === window.top) {
@@ -201,11 +202,14 @@ if (window === window.top) {
     }, settings.tooltipDuration);
   };
 
+  const floatingBar = new FloatingDevToolsBar(settings, getScreenWorkArea);
+
   const refreshState = async () => {
     try {
       const data = await loadAppData();
       settings = data.settings;
       presets = data.presets;
+      floatingBar.updateSettings(settings);
     } catch {
       // ignore if extension context invalidated
     }
@@ -223,6 +227,13 @@ if (window === window.top) {
     lastInnerW = window.innerWidth;
     lastInnerH = window.innerHeight;
     isReady = true;
+    void floatingBar.syncFromBackground();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      void floatingBar.syncFromBackground();
+    }
   });
 
   window.addEventListener(
@@ -266,6 +277,11 @@ if (window === window.top) {
       lastInnerW = window.innerWidth;
       lastInnerH = window.innerHeight;
       showTooltip(message.windowWidth, message.windowHeight);
+      sendResponse({ ok: true });
+      return false;
+    }
+    if (message.type === 'DEVTOOLS_STATE_UPDATED') {
+      floatingBar.updateState(message.state);
       sendResponse({ ok: true });
       return false;
     }

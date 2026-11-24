@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enablePageShortcuts: true,
   autoZoomOversized: true,
   language: 'auto',
-  devtoolsRollupHeight: 40,
+  devtoolsFloatingBar: true,
   devtoolsSplitRatio: 0.62,
   devtoolsOpacity: 82,
   devtoolsAutoDockCompact: true,

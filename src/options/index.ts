@@ -102,7 +102,8 @@ function renderI18n(): void {
   $<HTMLHeadingElement>('heading-devtools').textContent = t('devtoolsSectionTitle');
   $<HTMLButtonElement>('btn-recheck-helper').textContent = t('helperRefresh');
   $<HTMLDivElement>('lbl-helper-status').textContent = t('helperStatusLabel');
-  $<HTMLDivElement>('lbl-rollup-height').textContent = t('rollupHeightLabel');
+  $<HTMLDivElement>('lbl-floating-bar').textContent = t('floatingBarLabel');
+  $<HTMLDivElement>('desc-floating-bar').textContent = t('floatingBarDesc');
   $<HTMLDivElement>('lbl-split-ratio').textContent = t('splitRatioLabel');
   $<HTMLDivElement>('lbl-dt-opacity').textContent = t('opacityLabel');
   $<HTMLDivElement>('lbl-auto-dock').textContent = t('autoDockLabel');
@@ -175,6 +176,10 @@ function renderI18n(): void {
   $<HTMLHeadingElement>('lbl-global-shortcuts').textContent = t('globalShortcutsTitle');
   $<HTMLParagraphElement>('desc-global-shortcuts').textContent = t('globalShortcutsDesc');
   $<HTMLElement>('shortcuts-url').textContent = getShortcutsPageUrl();
+  const openShortcutsBtn = $<HTMLButtonElement>('btn-open-shortcuts');
+  openShortcutsBtn.textContent = t('openShortcutsPage');
+  // Firefox 不允许扩展直接 tabs.create('about:addons')，隐藏直达按钮保留复制按钮
+  openShortcutsBtn.classList.toggle('hidden', isFirefox);
   $<HTMLButtonElement>('btn-copy-url').textContent = t('copyPath');
 
   populateSelect(
@@ -294,8 +299,7 @@ async function checkHelperConnection(): Promise<void> {
 }
 
 function syncSettingsControls(): void {
-  $<HTMLInputElement>('opt-rollup-height').value = String(settings.devtoolsRollupHeight);
-  $<HTMLSpanElement>('val-rollup-height').textContent = `${settings.devtoolsRollupHeight} px`;
+  $<HTMLInputElement>('opt-floating-bar').checked = settings.devtoolsFloatingBar;
   const splitPct = Math.round(settings.devtoolsSplitRatio * 100);
   $<HTMLInputElement>('opt-split-ratio').value = String(splitPct);
   $<HTMLSpanElement>('val-split-ratio').textContent = `${splitPct}%`;
@@ -598,12 +602,8 @@ function bindEvents(): void {
     showToast(lastHelperState?.helperConnected ? t('helperConnected') : t('helperDisconnected'));
   });
 
-  $<HTMLInputElement>('opt-rollup-height').addEventListener('input', (ev) => {
-    const val = Number((ev.target as HTMLInputElement).value);
-    settings.devtoolsRollupHeight = val;
-    $<HTMLSpanElement>('val-rollup-height').textContent = `${val} px`;
-  });
-  $<HTMLInputElement>('opt-rollup-height').addEventListener('change', async () => {
+  $<HTMLInputElement>('opt-floating-bar').addEventListener('change', async (ev) => {
+    settings.devtoolsFloatingBar = (ev.target as HTMLInputElement).checked;
     await persistSettings();
   });
 
@@ -705,6 +705,10 @@ function bindEvents(): void {
     syncSettingsControls();
     renderPresetTable();
     await persistSettings();
+  });
+
+  $<HTMLButtonElement>('btn-open-shortcuts').addEventListener('click', () => {
+    void ext.tabs.create({ url: getShortcutsPageUrl() });
   });
 
   $<HTMLButtonElement>('btn-copy-url').addEventListener('click', async () => {

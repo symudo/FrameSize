@@ -3,7 +3,7 @@
     "message": "FrameSize"
   },
   "extDescription": {
-    "message": "轻松调整浏览器窗口与视口尺寸，并支持独立 DevTools 窗口置顶、卷帘折叠与防遮挡分屏。"
+    "message": "轻松调整浏览器窗口与视口尺寸，并支持独立 DevTools 窗口置顶、收起为悬浮按钮、半透明与防遮挡分屏。"
   },
   "cmdOpenPopup": {
     "message": "打开 FrameSize 尺寸菜单"
@@ -17,8 +17,8 @@
   "cmdDevToolsPin": {
     "message": "置顶 / 取消置顶独立 DevTools 窗口"
   },
-  "cmdDevToolsRollup": {
-    "message": "卷帘折叠 / 展开独立 DevTools 窗口"
+  "cmdDevToolsCollapse": {
+    "message": "收起独立 DevTools 为悬浮按钮 / 原位展开"
   },
   "cmdDevToolsSplit": {
     "message": "网页与独立 DevTools 一键防遮挡分屏"

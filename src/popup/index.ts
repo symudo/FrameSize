@@ -313,8 +313,9 @@ function setPillContent(btn: HTMLButtonElement, icon: SVGSVGElement, label: stri
 function updateDevToolsUI(state: DevToolsState): void {
   devToolsState = state;
   const card = $<HTMLElement>('devtools-card');
-  card.classList.toggle('hidden', !state.hasDevTools);
-  if (!state.hasDevTools) return;
+  const visible = state.hasDevTools || state.helperConnected;
+  card.classList.toggle('hidden', !visible);
+  if (!visible) return;
 
   const dot = $<HTMLSpanElement>('helper-dot');
   dot.classList.toggle('online', state.helperConnected);
@@ -327,14 +328,13 @@ function updateDevToolsUI(state: DevToolsState): void {
   pinBtn.title = t('devtoolsPinTitle');
   setPillContent(pinBtn, createUiIcon('pin'), state.pinned ? t('devtoolsPinned') : t('devtoolsPin'));
 
-  const rollupBtn = $<HTMLButtonElement>('btn-dt-rollup');
-  const isCollapsed = state.rolledUp || state.minimized;
-  rollupBtn.classList.toggle('active', isCollapsed);
-  rollupBtn.title = state.helperConnected ? t('devtoolsRollupTitle') : t('devtoolsMinimizeTitle');
+  const collapseBtn = $<HTMLButtonElement>('btn-dt-collapse');
+  collapseBtn.classList.toggle('active', state.collapsed);
+  collapseBtn.title = t('devtoolsCollapseTitle');
   setPillContent(
-    rollupBtn,
-    createUiIcon(isCollapsed ? 'expand' : 'rollup'),
-    isCollapsed ? t('devtoolsRolledUp') : t('devtoolsRollup')
+    collapseBtn,
+    createUiIcon(state.collapsed ? 'expand' : 'minimize'),
+    state.collapsed ? t('devtoolsExpand') : t('devtoolsCollapse')
   );
 
   const opacityBtn = $<HTMLButtonElement>('btn-dt-opacity');
@@ -475,20 +475,18 @@ function bindEvents(): void {
     }
   });
 
-  $<HTMLButtonElement>('btn-dt-rollup').addEventListener('click', async () => {
+  $<HTMLButtonElement>('btn-dt-collapse').addEventListener('click', async () => {
     try {
       const res = await sendBg<{
         state: DevToolsState;
-        mode: 'rollup' | 'minimize' | 'none';
+        changed: boolean;
         collapsed: boolean;
       }>({
-        type: 'TOGGLE_DEVTOOLS_ROLLUP',
+        type: 'TOGGLE_DEVTOOLS_COLLAPSE',
       });
       updateDevToolsUI(res.state);
-      if (res.mode === 'rollup') {
-        showToast(res.collapsed ? t('devtoolsRolledToast') : t('devtoolsExpandedToast'));
-      } else if (res.mode === 'minimize') {
-        showToast(res.collapsed ? t('devtoolsMinimizedToast') : t('devtoolsRestoredToast'));
+      if (res.changed) {
+        showToast(res.collapsed ? t('devtoolsCollapsedToast') : t('devtoolsExpandedToast'));
       } else {
         showToast(t('devtoolsNotFound'));
       }

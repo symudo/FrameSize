@@ -3,7 +3,7 @@
     "message": "FrameSize"
   },
   "extDescription": {
-    "message": "Precision browser window & viewport resizer with undocked DevTools pin, roll-up, and split-screen controls."
+    "message": "Precision browser window & viewport resizer with undocked DevTools pin, floating collapse button, opacity, and split-screen."
   },
   "cmdOpenPopup": {
     "message": "Open FrameSize popup"
@@ -17,8 +17,8 @@
   "cmdDevToolsPin": {
     "message": "Toggle Always-on-Top for undocked DevTools"
   },
-  "cmdDevToolsRollup": {
-    "message": "Toggle Roll-up / Collapse for undocked DevTools"
+  "cmdDevToolsCollapse": {
+    "message": "Collapse undocked DevTools to floating button / Expand"
   },
   "cmdDevToolsSplit": {
     "message": "Split screen: browser + undocked DevTools"

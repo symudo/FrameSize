@@ -8,12 +8,14 @@ import (
 func TestNativeMessageRoundTrip(t *testing.T) {
 	var buf bytes.Buffer
 	orig := Response{
-		OK:       true,
-		Version:  HelperVersion,
-		Found:    true,
-		Pinned:   true,
-		RolledUp: false,
-		Title:    "DevTools - localhost:3000",
+		OK:          true,
+		Version:     HelperVersion,
+		Found:       true,
+		Pinned:      true,
+		Collapsed:   true,
+		Translucent: false,
+		Opacity:     100,
+		Title:       "DevTools - localhost:3000",
 	}
 	if err := WriteNativeMessage(&buf, orig); err != nil {
 		t.Fatalf("WriteNativeMessage failed: %v", err)
@@ -22,9 +24,8 @@ func TestNativeMessageRoundTrip(t *testing.T) {
 		t.Fatalf("expected length-prefixed payload, got %d bytes", buf.Len())
 	}
 
-	// Also verify reading a Request frame
 	var reqBuf bytes.Buffer
-	rawReq := []byte(`{"action":"toggle_pin","browser":"edge","target":{"left":100,"top":80,"width":720,"height":640}}`)
+	rawReq := []byte(`{"action":"toggle_collapse","browser":"edge","target":{"left":100,"top":80,"width":720,"height":640}}`)
 	reqBuf.Write([]byte{byte(len(rawReq)), 0, 0, 0})
 	reqBuf.Write(rawReq)
 
@@ -32,7 +33,7 @@ func TestNativeMessageRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadNativeMessage failed: %v", err)
 	}
-	if req.Action != "toggle_pin" || req.Browser != "edge" || req.Target == nil || req.Target.Width != 720 {
+	if req.Action != "toggle_collapse" || req.Browser != "edge" || req.Target == nil || req.Target.Width != 720 {
 		t.Fatalf("unexpected decoded request: %+v", req)
 	}
 }
@@ -56,7 +57,7 @@ func TestIsDevToolsTitle(t *testing.T) {
 	}
 }
 
-func TestSelectBestCandidate(t *testing.T) {
+func TestSelectBestCandidateIncludingMinimized(t *testing.T) {
 	candidates := []WindowCandidate{
 		{
 			Handle:      1,
@@ -68,23 +69,18 @@ func TestSelectBestCandidate(t *testing.T) {
 			Handle:      2,
 			Title:       "DevTools - localhost:3000",
 			ProcessName: "chrome.exe",
-			LogicalRect: Rect{Left: 1200, Top: 50, Width: 600, Height: 800},
-		},
-		{
-			Handle:      3,
-			Title:       "DevTools - docs.example.com",
-			ProcessName: "chrome.exe",
-			LogicalRect: Rect{Left: 200, Top: 200, Width: 500, Height: 500},
+			LogicalRect: Rect{Left: -32000, Top: -32000, Width: 160, Height: 28},
+			Minimized:   true,
 		},
 	}
 
-	target := &Rect{Left: 1204, Top: 52, Width: 598, Height: 800}
+	// Minimized DevTools reports (-32000, -32000) in Win32; must still be matched cleanly
+	target := &Rect{Left: 1200, Top: 50, Width: 600, Height: 800}
 	picked := SelectBestCandidate(candidates, "chrome", target)
 	if picked == nil || picked.Handle != 2 {
-		t.Fatalf("expected handle 2, got %+v", picked)
+		t.Fatalf("expected minimized DevTools handle 2, got %+v", picked)
 	}
 
-	// Browser filtering should skip chrome.exe when requesting firefox
 	pickedFF := SelectBestCandidate(candidates, "firefox", target)
 	if pickedFF != nil {
 		t.Fatalf("expected nil for firefox, got %+v", pickedFF)

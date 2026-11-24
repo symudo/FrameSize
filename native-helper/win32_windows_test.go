@@ -11,10 +11,9 @@ import (
 var (
 	procCreateWindowExW = user32.NewProc("CreateWindowExW")
 	procDestroyWindow   = user32.NewProc("DestroyWindow")
-	procShowWindow      = user32.NewProc("ShowWindow")
 )
 
-func TestRealWin32PinAndRollup(t *testing.T) {
+func TestRealWin32PinCollapseAndOpacity(t *testing.T) {
 	initPlatform()
 
 	className, _ := syscall.UTF16PtrFromString("STATIC")
@@ -39,7 +38,7 @@ func TestRealWin32PinAndRollup(t *testing.T) {
 	defer procDestroyWindow.Call(hwnd)
 	procShowWindow.Call(hwnd, swShowNA)
 
-	// 1. 验证置顶与取消置顶
+	// 1. 置顶与取消置顶
 	if isWindowPinned(hwnd) {
 		t.Fatalf("expected newly created window not pinned")
 	}
@@ -49,32 +48,35 @@ func TestRealWin32PinAndRollup(t *testing.T) {
 	if !isWindowPinned(hwnd) {
 		t.Fatalf("expected window to be pinned (WS_EX_TOPMOST)")
 	}
+
+	// 2. 干净收起（最小化）与展开（且自动保留置顶状态）
+	if isWindowCollapsed(hwnd) {
+		t.Fatalf("expected window not collapsed initially")
+	}
+	if err := setWindowCollapsed(hwnd, true); err != nil {
+		t.Fatalf("setWindowCollapsed(true) failed: %v", err)
+	}
+	if !isWindowCollapsed(hwnd) {
+		t.Fatalf("expected window to be collapsed (iconic)")
+	}
+	if err := setWindowCollapsed(hwnd, false); err != nil {
+		t.Fatalf("setWindowCollapsed(false) failed: %v", err)
+	}
+	if isWindowCollapsed(hwnd) {
+		t.Fatalf("expected window expanded after restore")
+	}
+	if !isWindowPinned(hwnd) {
+		t.Fatalf("expected Always-on-Top preserved after expand")
+	}
+
 	if err := setWindowPinned(hwnd, false); err != nil {
 		t.Fatalf("setWindowPinned(false) failed: %v", err)
 	}
 	if isWindowPinned(hwnd) {
-		t.Fatalf("expected window to be unpinned")
+		t.Fatalf("expected window unpinned")
 	}
 
-	// 2. 验证卷帘折叠与展开（SetWindowRgn）
-	dpi := getWindowDPI(hwnd)
-	if isWindowRolledUp(hwnd, dpi) {
-		t.Fatalf("expected newly created window not rolled up")
-	}
-	if err := setWindowRolledUp(hwnd, true, 640, dpi, 40); err != nil {
-		t.Fatalf("setWindowRolledUp(true) failed: %v", err)
-	}
-	if !isWindowRolledUp(hwnd, dpi) {
-		t.Fatalf("expected window to report rolledUp=true after SetWindowRgn")
-	}
-	if err := setWindowRolledUp(hwnd, false, 640, dpi, 40); err != nil {
-		t.Fatalf("setWindowRolledUp(false) failed: %v", err)
-	}
-	if isWindowRolledUp(hwnd, dpi) {
-		t.Fatalf("expected window to report rolledUp=false after reset")
-	}
-
-	// 3. 验证半透明切换与还原（WS_EX_LAYERED + SetLayeredWindowAttributes）
+	// 3. 半透明切换与还原
 	if trans, pct := getWindowOpacity(hwnd); trans || pct != 100 {
 		t.Fatalf("expected initial opacity 100%%, got trans=%v pct=%d", trans, pct)
 	}

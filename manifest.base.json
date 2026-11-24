@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "FrameSize",
   "description": "__MSG_extDescription__",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "default_locale": "en",
   "icons": {
     "16": "icons/icon-16.png",
@@ -54,15 +54,15 @@
     },
     "toggle-devtools-pin": {
       "suggested_key": {
-        "default": "Alt+Shift+P"
+        "default": "Alt+Shift+Y"
       },
       "description": "__MSG_cmdDevToolsPin__"
     },
-    "toggle-devtools-rollup": {
+    "toggle-devtools-collapse": {
       "suggested_key": {
         "default": "Alt+Shift+F"
       },
-      "description": "__MSG_cmdDevToolsRollup__"
+      "description": "__MSG_cmdDevToolsCollapse__"
     },
     "split-devtools": {
       "description": "__MSG_cmdDevToolsSplit__"

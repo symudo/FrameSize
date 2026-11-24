@@ -38,7 +38,7 @@ export interface Settings {
   enablePageShortcuts: boolean;
   autoZoomOversized: boolean; // 目标 Viewport 超出当前屏幕可用尺寸时自动降低页面 Zoom 以精准模拟
   language: LanguageSetting;
-  devtoolsRollupHeight: number; // logical px for Win32 title bar rollup
+  devtoolsFloatingBar: boolean; // 检测到独立 DevTools 时在网页角落显示可拖拽的迷你控制栏/展开按钮
   devtoolsSplitRatio: number; // 0.35 - 0.80 main browser width ratio
   devtoolsOpacity: number; // 50 - 95 percentage when translucent
   devtoolsAutoDockCompact: boolean; // 点击手机/平板预设时，若存在独立 DevTools 则自动靠左并将 DevTools 紧贴右侧
@@ -49,11 +49,10 @@ export type SplitDirection = 'right' | 'bottom';
 export interface DevToolsState {
   hasDevTools: boolean;
   windowId: number | null;
-  minimized: boolean;
   helperConnected: boolean;
   helperVersion: string | null;
   pinned: boolean;
-  rolledUp: boolean;
+  collapsed: boolean;
   translucent: boolean;
   opacity: number;
   title: string | null;
@@ -136,9 +135,9 @@ export type RuntimeMessage =
   | { type: 'MAXIMIZE_WINDOW' }
   | { type: 'GET_DEVTOOLS_STATE' }
   | { type: 'TOGGLE_DEVTOOLS_PIN' }
-  | { type: 'TOGGLE_DEVTOOLS_ROLLUP' }
+  | { type: 'TOGGLE_DEVTOOLS_COLLAPSE' }
   | { type: 'TOGGLE_DEVTOOLS_OPACITY' }
-  | { type: 'TOGGLE_DEVTOOLS_MINIMIZE' }
   | { type: 'SPLIT_DEVTOOLS'; direction: SplitDirection; screen?: ScreenWorkArea }
+  | { type: 'DEVTOOLS_STATE_UPDATED'; state: DevToolsState }
   | { type: 'QUERY_PAGE_METRICS' }
   | { type: 'SHOW_TOOLTIP_HINT'; windowWidth?: number; windowHeight?: number };

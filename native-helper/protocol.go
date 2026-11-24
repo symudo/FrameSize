@@ -10,13 +10,12 @@ import (
 )
 
 const (
-	MaxMessageBytes     = 1024 * 1024 // 1 MB Native Messaging limit
-	DefaultRollupHeight = 40          // Logical px height for title bar roll-up
-	DefaultOpacityPct   = 82          // Translucent opacity percentage (50-95)
+	MaxMessageBytes   = 1024 * 1024 // 1 MB Native Messaging limit
+	DefaultOpacityPct = 82          // Translucent opacity percentage (50-95)
 )
 
 // HelperVersion can be overridden at build time via -ldflags "-X main.HelperVersion=x.y.z".
-var HelperVersion = "1.3.0"
+var HelperVersion = "1.4.0"
 
 type Rect struct {
 	Left   int `json:"left"`
@@ -26,11 +25,11 @@ type Rect struct {
 }
 
 type Request struct {
-	Action       string `json:"action"`
-	Browser      string `json:"browser,omitempty"`
-	Target       *Rect  `json:"target,omitempty"`
-	RollupHeight int    `json:"rollupHeight,omitempty"`
-	Opacity      int    `json:"opacity,omitempty"` // 50-95 percentage
+	Action   string `json:"action"`
+	Browser  string `json:"browser,omitempty"`
+	Target   *Rect  `json:"target,omitempty"`
+	MoveRect *Rect  `json:"moveRect,omitempty"`
+	Opacity  int    `json:"opacity,omitempty"` // 50-95 percentage
 }
 
 type Response struct {
@@ -38,7 +37,7 @@ type Response struct {
 	Version     string `json:"version,omitempty"`
 	Found       bool   `json:"found,omitempty"`
 	Pinned      bool   `json:"pinned,omitempty"`
-	RolledUp    bool   `json:"rolledUp,omitempty"`
+	Collapsed   bool   `json:"collapsed,omitempty"`
 	Translucent bool   `json:"translucent,omitempty"`
 	Opacity     int    `json:"opacity,omitempty"`
 	Title       string `json:"title,omitempty"`
@@ -136,7 +135,8 @@ func MatchesBrowserProcess(procName, browser string) bool {
 	}
 }
 
-// SelectBestCandidate picks the OS window that best matches the DevTools window reported by the browser extension.
+// SelectBestCandidate picks the OS window that best matches the undocked DevTools window.
+// Minimized windows report (-32000, -32000) in Win32 GetWindowRect, so geometry distance is skipped for them.
 func SelectBestCandidate(candidates []WindowCandidate, browser string, target *Rect) *WindowCandidate {
 	var best *WindowCandidate
 	bestScore := math.MaxFloat64
@@ -151,23 +151,25 @@ func SelectBestCandidate(candidates []WindowCandidate, browser string, target *R
 		if !isTitleMatch && target == nil {
 			continue
 		}
+		if !isTitleMatch && c.Minimized {
+			continue
+		}
 
 		score := 0.0
 		if !isTitleMatch {
-			// Strongly penalize non-DevTools title, only allow if geometry matches almost identically
 			score += 2000
 		}
 		if c.Minimized {
-			score += 500
+			// Prefer non-minimized if multiple DevTools exist, but still match minimized when it is the one collapsed.
+			score += 200
 		}
 
-		if target != nil && target.Width > 0 && target.Height > 0 {
+		if !c.Minimized && target != nil && target.Width > 0 && target.Height > 0 {
 			dist := math.Abs(float64(c.LogicalRect.Left-target.Left)) +
 				math.Abs(float64(c.LogicalRect.Top-target.Top)) +
 				math.Abs(float64(c.LogicalRect.Width-target.Width)) +
 				math.Abs(float64(c.LogicalRect.Height-target.Height))
 			score += dist
-			// Reject completely unrelated non-DevTools windows
 			if !isTitleMatch && dist > 60 {
 				continue
 			}

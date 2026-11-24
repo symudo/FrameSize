@@ -65,12 +65,13 @@
 
           <div class="setting-row">
             <div class="setting-info">
-              <div class="setting-title" id="lbl-rollup-height">Rolled-up Title Bar Height</div>
+              <div class="setting-title" id="lbl-floating-bar">Show floating DevTools toolbar on web pages</div>
+              <div class="setting-desc" id="desc-floating-bar"></div>
             </div>
-            <div class="range-wrap">
-              <input type="range" id="opt-rollup-height" min="28" max="64" step="2" />
-              <span class="range-val" id="val-rollup-height">40 px</span>
-            </div>
+            <label class="switch">
+              <input type="checkbox" id="opt-floating-bar" />
+              <span class="slider"></span>
+            </label>
           </div>
 
           <div class="setting-row">
@@ -244,6 +245,7 @@
           <p class="setting-desc" id="desc-global-shortcuts"></p>
           <div class="shortcut-url-row">
             <code class="url-code" id="shortcuts-url">chrome://extensions/shortcuts</code>
+            <button type="button" class="btn-primary" id="btn-open-shortcuts">Open</button>
             <button type="button" class="btn-secondary" id="btn-copy-url">Copy</button>
           </div>
         </div>

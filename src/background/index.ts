@@ -10,13 +10,13 @@ import {
 import { initializeStorageDefaults, loadAppData } from '../shared/storage';
 import {
   dockDevToolsToRect,
-  findDevToolsWindow,
   getDevToolsState,
+  hasUndockedDevTools,
+  scheduleDevToolsBroadcast,
   splitBrowserWithDevTools,
-  toggleDevToolsMinimize,
+  toggleDevToolsCollapse,
   toggleDevToolsOpacity,
   toggleDevToolsPin,
-  toggleDevToolsRollup,
 } from './devtools';
 import type {
   CurrentDimensions,
@@ -468,8 +468,7 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
   let pairedLayout: ReturnType<typeof computePairedDevToolsLayout> = null;
   const isCompactPreset = payload.presetIcon === 'mobile' || payload.presetIcon === 'tablet';
   if (settings.devtoolsAutoDockCompact && isCompactPreset && workArea) {
-    const dtWin = await findDevToolsWindow();
-    if (dtWin) {
+    if (await hasUndockedDevTools()) {
       pairedLayout = computePairedDevToolsLayout(targetSize, workArea);
     }
   }
@@ -656,13 +655,10 @@ async function handleMessage(message: RuntimeMessage): Promise<unknown> {
       return getDevToolsState();
     case 'TOGGLE_DEVTOOLS_PIN':
       return toggleDevToolsPin();
-    case 'TOGGLE_DEVTOOLS_ROLLUP':
-      return toggleDevToolsRollup();
+    case 'TOGGLE_DEVTOOLS_COLLAPSE':
+      return toggleDevToolsCollapse();
     case 'TOGGLE_DEVTOOLS_OPACITY':
       return toggleDevToolsOpacity();
-    case 'TOGGLE_DEVTOOLS_MINIMIZE': {
-      return toggleDevToolsMinimize();
-    }
     case 'SPLIT_DEVTOOLS': {
       const workArea = message.screen ?? (await getCachedScreen());
       return splitBrowserWithDevTools(message.direction, workArea, pushUndoSnapshot);
@@ -683,6 +679,19 @@ if (ext.tabs?.onRemoved) {
   });
 }
 
+if (ext.windows?.onFocusChanged) {
+  ext.windows.onFocusChanged.addListener((windowId) => {
+    if (windowId === ext.windows.WINDOW_ID_NONE) return;
+    scheduleDevToolsBroadcast();
+  });
+}
+
+if (ext.tabs?.onActivated) {
+  ext.tabs.onActivated.addListener(() => {
+    scheduleDevToolsBroadcast();
+  });
+}
+
 if (ext.windows?.onRemoved) {
   ext.windows.onRemoved.addListener(async (windowId) => {
     const map = await getUndoMap();
@@ -695,6 +704,7 @@ if (ext.windows?.onRemoved) {
         // ignore
       }
     }
+    scheduleDevToolsBroadcast(120);
   });
 }
 
@@ -702,7 +712,11 @@ ext.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendRespons
   if (!message || typeof message !== 'object' || !('type' in message)) {
     return false;
   }
-  if (message.type === 'QUERY_PAGE_METRICS' || message.type === 'SHOW_TOOLTIP_HINT') {
+  if (
+    message.type === 'QUERY_PAGE_METRICS' ||
+    message.type === 'SHOW_TOOLTIP_HINT' ||
+    message.type === 'DEVTOOLS_STATE_UPDATED'
+  ) {
     return false;
   }
   handleMessage(message)
@@ -729,8 +743,8 @@ if (ext.commands?.onCommand) {
         await toggleDevToolsPin();
         return;
       }
-      if (command === 'toggle-devtools-rollup') {
-        await toggleDevToolsRollup();
+      if (command === 'toggle-devtools-collapse') {
+        await toggleDevToolsCollapse();
         return;
       }
       if (command === 'toggle-devtools-opacity') {

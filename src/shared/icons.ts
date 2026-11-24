@@ -60,7 +60,8 @@ export type UiIconName =
   | 'splitBottom'
   | 'minimize'
   | 'terminal'
-  | 'opacity';
+  | 'opacity'
+  | 'close';
 
 const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
   logo: {
@@ -197,6 +198,12 @@ const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
     shapes: [
       { tag: 'path', attrs: { d: 'M12 2.7l5.66 5.66a8 8 0 1 1-11.32 0L12 2.7z' } },
       { tag: 'path', attrs: { d: 'M12 18a4 4 0 0 0 4-4' } },
+    ],
+  },
+  close: {
+    shapes: [
+      { tag: 'line', attrs: { x1: '18', y1: '6', x2: '6', y2: '18' } },
+      { tag: 'line', attrs: { x1: '6', y1: '6', x2: '18', y2: '18' } },
     ],
   },
 };

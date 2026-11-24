@@ -2,6 +2,23 @@
 
 All notable changes to **FrameSize** are documented in this file.
 
+## [1.4.0] - 2026-11-24
+
+### Added
+- **网页悬浮 DevTools 迷你控制栏 & 一键展开按钮**：打开独立 DevTools 时，网页角落自动浮现可自由拖拽（记住位置、Shadow DOM 隔离）的毛玻璃迷你控制栏，直接提供 **置顶 / 收起 / 半透明 / 分屏** 可视化按钮，无需记快捷键或反复打开 Popup；支持在设置页「DevTools 助手」一键开关。
+- **收起为悬浮按钮 ↔ 点击秒展开（零残影）**：彻底替换 Windows DWM 下易出现外框残影的 `SetWindowRgn` 卷帘裁切，改为干净收起（桌面零残影）并在网页角落显示 **`[ >_ 展开 DevTools ]`** 按钮，点击瞬间原位恢复且自动保持之前的置顶与半透明状态。
+- **设置页一键打开浏览器快捷键设置**：Chrome / Edge 设置页新增「打开快捷键设置」按钮，方便随时自定义任意快捷键解决冲突。
+- **Native Helper + 浏览器 API 双路探测与跨隔离分屏**：即使部分 Chrome/Edge 版本屏蔽 `windows.getAll({ windowTypes: ['devtools'] })`，依然可通过 Native Helper 稳定识别独立 DevTools 窗口、保持 Popup 按钮可见并完成精准分屏与贴边联动。
+
+### Changed
+- 独立 DevTools 始终置顶的默认建议快捷键由易冲突的 `Alt+Shift+P` 调整为低冲突的 `Alt+Shift+Y`（收起/展开仍为 `Alt+Shift+F`，均可在浏览器快捷键页自由修改）。
+
+### Fixed
+- 修复最小化后的独立 DevTools 窗口因 Win32 坐标报告 `(-32000, -32000)` 导致无法被几何匹配找回的问题。
+- 修复 DevTools 处于最大化态执行跨隔离移动分屏时未先恢复普通态（`IsZoomed`）的问题。
+- 为窗口焦点与标签页切换的状态广播增加 220ms 防抖，避免高频切换时重复拉起本地 Helper 子进程。
+- 调整悬浮控制栏默认初始位置至右下角偏上，避免与右下角 Resize Tooltip 重叠，并补充未安装伴侣时的内联提示气泡。
+
 ## [1.3.1] - 2026-11-24
 
 ### Fixed
