@@ -1,6 +1,7 @@
 import { DEFAULT_OVERHEAD } from '../shared/defaults';
 import { ext, getSessionStorage } from '../shared/ext';
 import {
+  computeAutoZoomForViewport,
   computeFrameOverhead,
   computeTargetWindowSize,
   computeWindowPosition,
@@ -26,6 +27,7 @@ import type {
 const SESSION_HISTORY_KEY = 'framesize_undo_history';
 const SESSION_OVERHEAD_KEY = 'framesize_overhead_cache';
 const SESSION_SCREEN_KEY = 'framesize_screen_cache';
+const SESSION_AUTO_ZOOM_KEY = 'framesize_auto_zoom_tabs';
 const MAX_HISTORY_PER_WINDOW = 10;
 
 function sleep(ms: number): Promise<void> {
@@ -64,6 +66,56 @@ async function getTabZoom(tabId?: number): Promise<number> {
   } catch {
     return 1;
   }
+}
+
+async function setTabZoomSafe(tabId: number | undefined, zoom: number): Promise<boolean> {
+  if (!tabId || !ext.tabs?.setZoom) return false;
+  try {
+    await ext.tabs.setZoom(tabId, zoom);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function getAutoZoomMap(): Promise<Record<string, number>> {
+  try {
+    const store = await getSessionStorage().get(SESSION_AUTO_ZOOM_KEY);
+    const map = store[SESSION_AUTO_ZOOM_KEY];
+    if (map && typeof map === 'object') {
+      return map as Record<string, number>;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+async function saveAutoZoomOrigin(tabId: number, originalZoom: number): Promise<void> {
+  const map = await getAutoZoomMap();
+  const key = String(tabId);
+  if (map[key] === undefined) {
+    map[key] = originalZoom;
+    try {
+      await getSessionStorage().set({ [SESSION_AUTO_ZOOM_KEY]: map });
+    } catch {
+      // ignore
+    }
+  }
+}
+
+async function popAutoZoomOrigin(tabId: number): Promise<number | null> {
+  const map = await getAutoZoomMap();
+  const key = String(tabId);
+  const prev = map[key];
+  if (prev === undefined) return null;
+  delete map[key];
+  try {
+    await getSessionStorage().set({ [SESSION_AUTO_ZOOM_KEY]: map });
+  } catch {
+    // ignore
+  }
+  return prev;
 }
 
 async function getCachedOverhead(): Promise<FrameOverhead> {
@@ -118,7 +170,11 @@ async function getUndoMap(): Promise<Record<string, WindowSnapshot[]>> {
   return {};
 }
 
-async function pushUndoSnapshot(win: chrome.windows.Window): Promise<void> {
+async function pushUndoSnapshot(
+  win: chrome.windows.Window,
+  tabId?: number,
+  zoom?: number
+): Promise<void> {
   if (win.id === undefined) return;
   const snapshot: WindowSnapshot = {
     width: win.width ?? 1280,
@@ -126,6 +182,8 @@ async function pushUndoSnapshot(win: chrome.windows.Window): Promise<void> {
     left: win.left ?? 0,
     top: win.top ?? 0,
     state: win.state ?? 'normal',
+    tabId,
+    zoom,
   };
   const map = await getUndoMap();
   const key = String(win.id);
@@ -138,7 +196,8 @@ async function pushUndoSnapshot(win: chrome.windows.Window): Promise<void> {
     last.height === snapshot.height &&
     last.left === snapshot.left &&
     last.top === snapshot.top &&
-    last.state === snapshot.state
+    last.state === snapshot.state &&
+    last.zoom === snapshot.zoom
   ) {
     return;
   }
@@ -192,18 +251,32 @@ async function notifyTooltip(
   }
 }
 
-async function getCurrentDimensions(hintScreen?: ScreenWorkArea): Promise<CurrentDimensions> {
+async function getCurrentDimensions(
+  hintScreen?: ScreenWorkArea,
+  autoZoomApplied = false
+): Promise<CurrentDimensions> {
   const { win, tab } = await getActiveWindowAndTab();
-  const [metrics, zoom, canUndo] = await Promise.all([
+  const [metrics, zoom, canUndo, cachedScreen] = await Promise.all([
     queryTabMetrics(tab?.id),
     getTabZoom(tab?.id),
     hasUndoHistory(win.id),
+    getCachedScreen(),
   ]);
 
+  let resolvedScreen: ScreenWorkArea | undefined = hintScreen ?? cachedScreen;
   if (metrics?.screen) {
-    await setCachedScreen(metrics.screen);
-  } else if (hintScreen) {
-    await setCachedScreen(hintScreen);
+    // 网页内 devicePixelRatio 包含页面 zoom，除以 zoom 还原系统 DPI 缩放；Popup 传来的 systemDpr 本身即为 100% 纯系统缩放
+    const pageSysDpr =
+      metrics.screen.systemDpr && zoom > 0
+        ? Number((metrics.screen.systemDpr / zoom).toFixed(2))
+        : undefined;
+    resolvedScreen = {
+      ...metrics.screen,
+      systemDpr: hintScreen?.systemDpr ?? pageSysDpr ?? cachedScreen?.systemDpr,
+    };
+  }
+  if (resolvedScreen) {
+    await setCachedScreen(resolvedScreen);
   }
 
   // 仅在普通非最大化窗口状态下更新边框开销缓存，避免最大化态隐形边框污染缓存
@@ -228,6 +301,8 @@ async function getCurrentDimensions(hintScreen?: ScreenWorkArea): Promise<Curren
     viewportWidth: metrics ? Math.round(metrics.innerWidth) : null,
     viewportHeight: metrics ? Math.round(metrics.innerHeight) : null,
     zoom,
+    autoZoomApplied,
+    screen: resolvedScreen,
     canUndo,
     isRestrictedPage: metrics === null,
   };
@@ -246,7 +321,17 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
     getCachedScreen(),
   ]);
 
-  const workArea = metrics?.screen ?? payload.screen ?? cachedScreen;
+  const pageSysDpr =
+    metrics?.screen?.systemDpr && zoom > 0
+      ? Number((metrics.screen.systemDpr / zoom).toFixed(2))
+      : undefined;
+  const rawWorkArea = metrics?.screen ?? payload.screen ?? cachedScreen;
+  const workArea: ScreenWorkArea | undefined = rawWorkArea
+    ? {
+        ...rawWorkArea,
+        systemDpr: payload.screen?.systemDpr ?? pageSysDpr ?? cachedScreen?.systemDpr,
+      }
+    : undefined;
   if (workArea) {
     await setCachedScreen(workArea);
   }
@@ -318,9 +403,10 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
     return getCurrentDimensions(workArea);
   }
 
-  // 记录撤销快照
-  await pushUndoSnapshot(win);
+  // 记录撤销快照（含当前 zoom，便于撤销时同步恢复缩放）
+  await pushUndoSnapshot(win, tab?.id, zoom);
 
+  const { settings } = await loadAppData();
   const isNormalState = !win.state || win.state === 'normal';
   const overhead: FrameOverhead =
     metrics && isNormalState && win.width && win.height
@@ -331,13 +417,47 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
     await setCachedOverhead(overhead);
   }
 
+  // 超屏自动缩放模拟大屏 Viewport（例如 150% 缩放屏幕下测试 1920×1080）
+  let effectiveZoom = zoom;
+  let autoZoomApplied = false;
+  if (tab?.id !== undefined) {
+    const fitZoom =
+      payload.target === 'viewport' && metrics && settings.autoZoomOversized
+        ? computeAutoZoomForViewport(payload.width, payload.height, workArea, overhead)
+        : null;
+
+    if (fitZoom !== null) {
+      await saveAutoZoomOrigin(tab.id, zoom);
+      if (Math.abs(fitZoom - zoom) > 0.005) {
+        const ok = await setTabZoomSafe(tab.id, fitZoom);
+        if (ok) {
+          await sleep(40);
+          effectiveZoom = await getTabZoom(tab.id);
+          autoZoomApplied = true;
+        }
+      } else {
+        autoZoomApplied = true;
+      }
+    } else {
+      // 目标尺寸未超屏或切换到 Window 模式：若此前由插件自动缩放过，平滑恢复原缩放倍率
+      const originZoom = await popAutoZoomOrigin(tab.id);
+      if (originZoom !== null && Math.abs(originZoom - zoom) > 0.005) {
+        const ok = await setTabZoomSafe(tab.id, originZoom);
+        if (ok) {
+          await sleep(40);
+          effectiveZoom = await getTabZoom(tab.id);
+        }
+      }
+    }
+  }
+
   const targetSize = computeTargetWindowSize(
     payload.width,
     payload.height,
     payload.target,
     { width: currentWidth, height: currentHeight },
     overhead,
-    zoom
+    effectiveZoom
   );
 
   const pos = computeWindowPosition(
@@ -372,8 +492,14 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
       const errCssH = payload.height !== null ? payload.height - actualH : 0;
 
       if (Math.abs(errCssW) > 1 || Math.abs(errCssH) > 1) {
-        const refinedW = Math.max(200, Math.round((updatedWin.width ?? targetSize.width) + errCssW * zoom));
-        const refinedH = Math.max(200, Math.round((updatedWin.height ?? targetSize.height) + errCssH * zoom));
+        const refinedW = Math.max(
+          200,
+          Math.round((updatedWin.width ?? targetSize.width) + errCssW * effectiveZoom)
+        );
+        const refinedH = Math.max(
+          200,
+          Math.round((updatedWin.height ?? targetSize.height) + errCssH * effectiveZoom)
+        );
         const refinedPos = computeWindowPosition(
           payload.alignment,
           refinedW,
@@ -395,7 +521,7 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
           updatedWin.height,
           finalMetrics.innerWidth,
           finalMetrics.innerHeight,
-          zoom
+          effectiveZoom
         );
         await setCachedOverhead(finalOverhead);
       }
@@ -403,7 +529,7 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
   }
 
   await notifyTooltip(tab?.id, updatedWin.width, updatedWin.height);
-  return getCurrentDimensions(workArea);
+  return getCurrentDimensions(workArea, autoZoomApplied);
 }
 
 async function rotateCurrentWindow(hintScreen?: ScreenWorkArea): Promise<CurrentDimensions> {
@@ -435,6 +561,11 @@ async function undoResize(): Promise<CurrentDimensions> {
   const snapshot = await popUndoSnapshot(win.id);
   if (!snapshot) {
     return getCurrentDimensions();
+  }
+
+  if (snapshot.tabId !== undefined && typeof snapshot.zoom === 'number') {
+    await setTabZoomSafe(snapshot.tabId, snapshot.zoom);
+    await popAutoZoomOrigin(snapshot.tabId);
   }
 
   if (snapshot.state === 'maximized' || snapshot.state === 'fullscreen') {
@@ -522,6 +653,28 @@ async function handleMessage(message: RuntimeMessage): Promise<unknown> {
 ext.runtime.onInstalled.addListener(() => {
   void initializeStorageDefaults();
 });
+
+// 清理已关闭标签页与窗口的会话缓存，防止长期运行残留
+if (ext.tabs?.onRemoved) {
+  ext.tabs.onRemoved.addListener((tabId) => {
+    void popAutoZoomOrigin(tabId);
+  });
+}
+
+if (ext.windows?.onRemoved) {
+  ext.windows.onRemoved.addListener(async (windowId) => {
+    const map = await getUndoMap();
+    const key = String(windowId);
+    if (key in map) {
+      delete map[key];
+      try {
+        await getSessionStorage().set({ [SESSION_HISTORY_KEY]: map });
+      } catch {
+        // ignore
+      }
+    }
+  });
+}
 
 ext.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
   if (!message || typeof message !== 'object' || !('type' in message)) {

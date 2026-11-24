@@ -124,6 +124,10 @@ export function sanitizeSettings(raw: unknown): Settings {
       typeof obj.enablePageShortcuts === 'boolean'
         ? obj.enablePageShortcuts
         : DEFAULT_SETTINGS.enablePageShortcuts,
+    autoZoomOversized:
+      typeof obj.autoZoomOversized === 'boolean'
+        ? obj.autoZoomOversized
+        : DEFAULT_SETTINGS.autoZoomOversized,
     language: lang === 'auto' || lang === 'zh' || lang === 'en' ? lang : DEFAULT_SETTINGS.language,
     devtoolsRollupHeight:
       Number.isFinite(Number(obj.devtoolsRollupHeight)) &&

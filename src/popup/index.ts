@@ -29,6 +29,9 @@ function getPopupScreenWorkArea(): ScreenWorkArea {
     availTop: typeof scr.availTop === 'number' ? scr.availTop : 0,
     availWidth: scr.availWidth || 1920,
     availHeight: scr.availHeight || 1080,
+    screenWidth: scr.width || undefined,
+    screenHeight: scr.height || undefined,
+    systemDpr: window.devicePixelRatio || 1,
   };
 }
 
@@ -89,6 +92,20 @@ function updateMetricsUI(dims: CurrentDimensions): void {
   const zoomPct = Math.round(dims.zoom * 100);
   zoomPill.textContent = `${zoomPct}%`;
   zoomPill.classList.toggle('hidden', zoomPct === 100 || dims.isRestrictedPage);
+
+  const screenMeta = $<HTMLDivElement>('screen-meta');
+  const scr = dims.screen ?? getPopupScreenWorkArea();
+  if (scr && scr.availWidth > 0 && scr.availHeight > 0) {
+    const scalePct = Math.round((scr.systemDpr ?? window.devicePixelRatio ?? 1) * 100);
+    const leftSpan = document.createElement('span');
+    leftSpan.textContent = `${t('screenLogicalLabel')} ${scr.availWidth} × ${scr.availHeight}`;
+    const rightSpan = document.createElement('span');
+    rightSpan.textContent = `${t('screenScaleLabel')} ${scalePct}%`;
+    screenMeta.replaceChildren(leftSpan, rightSpan);
+    screenMeta.classList.remove('hidden');
+  } else {
+    screenMeta.classList.add('hidden');
+  }
 
   banner.textContent = t('restrictedHint');
   banner.classList.toggle('hidden', !dims.isRestrictedPage);
@@ -180,6 +197,15 @@ function renderPresets(): void {
   }
 }
 
+function showAppliedFeedback(dims: CurrentDimensions): void {
+  updateMetricsUI(dims);
+  if (dims.autoZoomApplied) {
+    showToast(`${t('appliedAutoZoomToast')} ${Math.round(dims.zoom * 100)}%`);
+  } else {
+    showToast(t('appliedToast'));
+  }
+}
+
 async function applyPreset(presetId: string, popOut: boolean): Promise<void> {
   try {
     const dims = await sendBg<CurrentDimensions>({
@@ -192,8 +218,7 @@ async function applyPreset(presetId: string, popOut: boolean): Promise<void> {
       window.close();
       return;
     }
-    updateMetricsUI(dims);
-    showToast(t('appliedToast'));
+    showAppliedFeedback(dims);
   } catch (err) {
     showToast(err instanceof Error ? err.message : String(err));
   }
@@ -394,8 +419,7 @@ function bindEvents(): void {
         window.close();
         return;
       }
-      updateMetricsUI(dims);
-      showToast(t('appliedToast'));
+      showAppliedFeedback(dims);
     } catch (err) {
       showToast(err instanceof Error ? err.message : String(err));
     }

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.1.0)'
+        description: 'Release tag (e.g. v1.2.0)'
         required: true
         type: string
 
@@ -46,11 +46,20 @@ jobs:
           npm run icons
           npm run package
 
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          node scripts/extract-changelog.mjs "$RELEASE_TAG" > release-notes.md
+          cat release-notes.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          generate_release_notes: true
+          name: FrameSize ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          body_path: release-notes.md
           files: |
             release/framesize-chromium-*.zip
             release/framesize-firefox-*.zip

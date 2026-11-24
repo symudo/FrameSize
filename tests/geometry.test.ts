@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeAutoZoomForViewport,
   computeFrameOverhead,
   computeSplitLayout,
   computeTargetWindowSize,
@@ -135,5 +136,23 @@ describe('geometry', () => {
     expect(clamped.main.left).toBe(-1920);
     expect(clamped.main.width).toBe(Math.round(1920 * 0.8));
     expect(clamped.devtools.left).toBe(-1920 + clamped.main.width);
+  });
+
+  it('computes auto-zoom fit for oversized viewports on high-DPI screens', () => {
+    const laptop150 = { availLeft: 0, availTop: 0, availWidth: 1707, availHeight: 1020 };
+    const overhead = { dx: 16, dy: 88 };
+
+    // 1920×1080 超出 150% 缩放的 2560×1600 屏幕可用逻辑区域 (1691×932)
+    // ratioW = 1691/1920 = 0.8807, ratioH = 932/1080 = 0.8629 -> 0.86
+    const fitZoom = computeAutoZoomForViewport(1920, 1080, laptop150, overhead);
+    expect(fitZoom).toBe(0.86);
+
+    // 验证乘以 fitZoom 后的窗口尺寸严格不超屏
+    const targetWin = computeTargetWindowSize(1920, 1080, 'viewport', { width: 1200, height: 800 }, overhead, fitZoom!);
+    expect(targetWin.width).toBeLessThanOrEqual(laptop150.availWidth);
+    expect(targetWin.height).toBeLessThanOrEqual(laptop150.availHeight);
+
+    // 未超屏（如 1280×720）返回 null
+    expect(computeAutoZoomForViewport(1280, 720, laptop150, overhead)).toBeNull();
   });
 });

@@ -81,6 +81,10 @@ function populateSelect(
 
 function renderI18n(): void {
   setIconContent($<HTMLSpanElement>('brand-icon'), createUiIcon('logo'));
+  const ver = ext.runtime?.getManifest?.()?.version;
+  if (ver) {
+    $<HTMLDivElement>('brand-ver').textContent = `v${ver}`;
+  }
 
   $<HTMLButtonElement>('nav-presets').textContent = t('navPresets');
   $<HTMLButtonElement>('nav-devtools').textContent = t('navDevtools');
@@ -150,6 +154,8 @@ function renderI18n(): void {
   $<HTMLDivElement>('desc-sync-enabled').textContent = t('syncEnabledDesc');
   $<HTMLDivElement>('lbl-page-shortcuts').textContent = t('pageShortcutsLabel');
   $<HTMLDivElement>('desc-page-shortcuts').textContent = t('pageShortcutsDesc');
+  $<HTMLDivElement>('lbl-auto-zoom').textContent = t('autoZoomLabel');
+  $<HTMLDivElement>('desc-auto-zoom').textContent = t('autoZoomDesc');
   $<HTMLDivElement>('lbl-language').textContent = t('languageLabel');
   $<HTMLHeadingElement>('lbl-global-shortcuts').textContent = t('globalShortcutsTitle');
   $<HTMLParagraphElement>('desc-global-shortcuts').textContent = t('globalShortcutsDesc');
@@ -288,6 +294,7 @@ function syncSettingsControls(): void {
   $<HTMLInputElement>('opt-close-popup').checked = settings.closePopupOnResize;
   $<HTMLInputElement>('opt-sync-enabled').checked = settings.syncEnabled;
   $<HTMLInputElement>('opt-page-shortcuts').checked = settings.enablePageShortcuts;
+  $<HTMLInputElement>('opt-auto-zoom').checked = settings.autoZoomOversized;
   $<HTMLSelectElement>('opt-language').value = settings.language;
 
   for (const cell of document.querySelectorAll<HTMLButtonElement>('.pos-cell')) {
@@ -645,6 +652,11 @@ function bindEvents(): void {
 
   $<HTMLInputElement>('opt-page-shortcuts').addEventListener('change', async (ev) => {
     settings.enablePageShortcuts = (ev.target as HTMLInputElement).checked;
+    await persistSettings();
+  });
+
+  $<HTMLInputElement>('opt-auto-zoom').addEventListener('change', async (ev) => {
+    settings.autoZoomOversized = (ev.target as HTMLInputElement).checked;
     await persistSettings();
   });
 

@@ -62,6 +62,45 @@ export function computeTargetWindowSize(
   return { width, height };
 }
 
+export const MIN_AUTO_ZOOM = 0.25;
+
+/**
+ * 当目标 Viewport 逻辑尺寸超出当前屏幕可用工作区（例如 150% DPI 缩放下的 2.5K 屏幕测试 1920×1080）时，
+ * 计算恰好能完整装入屏幕的页面缩放倍率（向下取整到 0.01，确保不溢出屏幕）。
+ * 未超屏时返回 null。
+ */
+export function computeAutoZoomForViewport(
+  desiredWidth: number | null,
+  desiredHeight: number | null,
+  workArea: ScreenWorkArea | undefined,
+  overhead: FrameOverhead
+): number | null {
+  if (!workArea || workArea.availWidth <= 0 || workArea.availHeight <= 0) {
+    return null;
+  }
+
+  const maxContentW = Math.max(MIN_WINDOW_SIZE, workArea.availWidth - overhead.dx);
+  const maxContentH = Math.max(MIN_WINDOW_SIZE, workArea.availHeight - overhead.dy);
+
+  let ratioW = 1;
+  let ratioH = 1;
+  if (desiredWidth !== null && desiredWidth > maxContentW) {
+    ratioW = maxContentW / desiredWidth;
+  }
+  if (desiredHeight !== null && desiredHeight > maxContentH) {
+    ratioH = maxContentH / desiredHeight;
+  }
+
+  const raw = Math.min(ratioW, ratioH);
+  if (raw >= 0.999) {
+    return null;
+  }
+
+  // 向下取整到 0.01，确保乘以目标宽高后严格 <= 可用工作区
+  const floored = Math.floor(raw * 100) / 100;
+  return Math.max(MIN_AUTO_ZOOM, Math.min(0.99, floored));
+}
+
 /**
  * 根据对齐方式与当前屏幕可用工作区计算窗口 (left, top)。
  * 返回 null 表示保持当前位置不移动。

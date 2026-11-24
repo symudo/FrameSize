@@ -27,6 +27,9 @@ if (window === window.top) {
       availTop: typeof scr.availTop === 'number' ? scr.availTop : 0,
       availWidth: scr.availWidth || window.outerWidth,
       availHeight: scr.availHeight || window.outerHeight,
+      screenWidth: scr.width || undefined,
+      screenHeight: scr.height || undefined,
+      systemDpr: window.devicePixelRatio || 1,
     };
   };
 

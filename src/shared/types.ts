@@ -34,6 +34,7 @@ export interface Settings {
   tooltipPosition: TooltipPosition;
   tooltipDisplay: TooltipDisplayMode;
   enablePageShortcuts: boolean;
+  autoZoomOversized: boolean; // 目标 Viewport 超出当前屏幕可用尺寸时自动降低页面 Zoom 以精准模拟
   language: LanguageSetting;
   devtoolsRollupHeight: number; // logical px for Win32 title bar rollup
   devtoolsSplitRatio: number; // 0.35 - 0.80 main browser width ratio
@@ -57,6 +58,9 @@ export interface ScreenWorkArea {
   availTop: number;
   availWidth: number;
   availHeight: number;
+  screenWidth?: number;
+  screenHeight?: number;
+  systemDpr?: number;
 }
 
 export interface ViewportMetrics {
@@ -78,6 +82,8 @@ export interface WindowSnapshot {
   left: number;
   top: number;
   state: chrome.windows.windowStateEnum;
+  tabId?: number;
+  zoom?: number;
 }
 
 export interface CurrentDimensions {
@@ -90,6 +96,8 @@ export interface CurrentDimensions {
   viewportWidth: number | null;
   viewportHeight: number | null;
   zoom: number;
+  autoZoomApplied?: boolean;
+  screen?: ScreenWorkArea;
   canUndo: boolean;
   isRestrictedPage: boolean;
 }
