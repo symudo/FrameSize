@@ -11,6 +11,7 @@ import {
   saveSettings,
 } from '../shared/storage';
 import type {
+  BreakpointPreset,
   DeviceType,
   DevToolsState,
   LanguageSetting,
@@ -103,6 +104,9 @@ function renderI18n(): void {
   $<HTMLDivElement>('lbl-helper-status').textContent = t('helperStatusLabel');
   $<HTMLDivElement>('lbl-rollup-height').textContent = t('rollupHeightLabel');
   $<HTMLDivElement>('lbl-split-ratio').textContent = t('splitRatioLabel');
+  $<HTMLDivElement>('lbl-dt-opacity').textContent = t('opacityLabel');
+  $<HTMLDivElement>('lbl-auto-dock').textContent = t('autoDockLabel');
+  $<HTMLDivElement>('desc-auto-dock').textContent = t('autoDockDesc');
   $<HTMLHeadingElement>('lbl-helper-install-title').textContent = t('helperInstallTitle');
   $<HTMLParagraphElement>('desc-helper-install').textContent = t('helperInstallDesc');
   $<HTMLSpanElement>('lbl-ext-id').textContent = t('helperExtIdLabel');
@@ -121,6 +125,7 @@ function renderI18n(): void {
   $<HTMLDivElement>('lbl-tooltip-enabled').textContent = t('tooltipEnabledLabel');
   $<HTMLDivElement>('desc-tooltip-enabled').textContent = t('tooltipEnabledDesc');
   $<HTMLDivElement>('lbl-tooltip-display').textContent = t('tooltipDisplayLabel');
+  $<HTMLDivElement>('lbl-breakpoint').textContent = t('breakpointLabel');
   $<HTMLDivElement>('lbl-tooltip-position').textContent = t('tooltipPositionLabel');
   $<HTMLDivElement>('lbl-tooltip-duration').textContent = t('tooltipDurationLabel');
 
@@ -132,6 +137,16 @@ function renderI18n(): void {
       { value: 'window', label: t('displayWindow') },
     ],
     settings.tooltipDisplay
+  );
+
+  populateSelect(
+    $<HTMLSelectElement>('opt-breakpoint'),
+    [
+      { value: 'tailwind', label: t('bpTailwind') },
+      { value: 'bootstrap', label: t('bpBootstrap') },
+      { value: 'off', label: t('bpOff') },
+    ],
+    settings.breakpointPreset
   );
 
   const posLabels: Record<TooltipPosition, string> = {
@@ -284,9 +299,13 @@ function syncSettingsControls(): void {
   const splitPct = Math.round(settings.devtoolsSplitRatio * 100);
   $<HTMLInputElement>('opt-split-ratio').value = String(splitPct);
   $<HTMLSpanElement>('val-split-ratio').textContent = `${splitPct}%`;
+  $<HTMLInputElement>('opt-dt-opacity').value = String(settings.devtoolsOpacity);
+  $<HTMLSpanElement>('val-dt-opacity').textContent = `${settings.devtoolsOpacity}%`;
+  $<HTMLInputElement>('opt-auto-dock').checked = settings.devtoolsAutoDockCompact;
 
   $<HTMLInputElement>('opt-tooltip-enabled').checked = settings.tooltipEnabled;
   $<HTMLSelectElement>('opt-tooltip-display').value = settings.tooltipDisplay;
+  $<HTMLSelectElement>('opt-breakpoint').value = settings.breakpointPreset;
   $<HTMLInputElement>('opt-tooltip-duration').value = String(settings.tooltipDuration);
   $<HTMLSpanElement>('val-tooltip-duration').textContent =
     `${(settings.tooltipDuration / 1000).toFixed(2).replace(/\.?0+$/, '')} ${t('seconds')}`;
@@ -597,6 +616,20 @@ function bindEvents(): void {
     await persistSettings();
   });
 
+  $<HTMLInputElement>('opt-dt-opacity').addEventListener('input', (ev) => {
+    const pct = Number((ev.target as HTMLInputElement).value);
+    settings.devtoolsOpacity = pct;
+    $<HTMLSpanElement>('val-dt-opacity').textContent = `${pct}%`;
+  });
+  $<HTMLInputElement>('opt-dt-opacity').addEventListener('change', async () => {
+    await persistSettings();
+  });
+
+  $<HTMLInputElement>('opt-auto-dock').addEventListener('change', async (ev) => {
+    settings.devtoolsAutoDockCompact = (ev.target as HTMLInputElement).checked;
+    await persistSettings();
+  });
+
   $<HTMLButtonElement>('btn-copy-cmd').addEventListener('click', async () => {
     const cmd = $<HTMLElement>('helper-install-cmd').textContent ?? '';
     try {
@@ -615,6 +648,11 @@ function bindEvents(): void {
 
   $<HTMLSelectElement>('opt-tooltip-display').addEventListener('change', async (ev) => {
     settings.tooltipDisplay = (ev.target as HTMLSelectElement).value as TooltipDisplayMode;
+    await persistSettings();
+  });
+
+  $<HTMLSelectElement>('opt-breakpoint').addEventListener('change', async (ev) => {
+    settings.breakpointPreset = (ev.target as HTMLSelectElement).value as BreakpointPreset;
     await persistSettings();
   });
 

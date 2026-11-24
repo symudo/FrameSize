@@ -73,4 +73,21 @@ func TestRealWin32PinAndRollup(t *testing.T) {
 	if isWindowRolledUp(hwnd, dpi) {
 		t.Fatalf("expected window to report rolledUp=false after reset")
 	}
+
+	// 3. 验证半透明切换与还原（WS_EX_LAYERED + SetLayeredWindowAttributes）
+	if trans, pct := getWindowOpacity(hwnd); trans || pct != 100 {
+		t.Fatalf("expected initial opacity 100%%, got trans=%v pct=%d", trans, pct)
+	}
+	if err := setWindowOpacity(hwnd, true, 80); err != nil {
+		t.Fatalf("setWindowOpacity(true, 80) failed: %v", err)
+	}
+	if trans, pct := getWindowOpacity(hwnd); !trans || pct < 78 || pct > 82 {
+		t.Fatalf("expected translucent ~80%%, got trans=%v pct=%d", trans, pct)
+	}
+	if err := setWindowOpacity(hwnd, false, 100); err != nil {
+		t.Fatalf("setWindowOpacity(false) failed: %v", err)
+	}
+	if trans, pct := getWindowOpacity(hwnd); trans || pct != 100 {
+		t.Fatalf("expected restored opacity 100%%, got trans=%v pct=%d", trans, pct)
+	}
 }

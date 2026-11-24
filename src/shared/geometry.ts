@@ -1,4 +1,5 @@
 import type {
+  BreakpointPreset,
   FrameOverhead,
   ResizeTarget,
   ScreenWorkArea,
@@ -271,6 +272,77 @@ export function computeSplitLayout(
       top: Math.round(availTop),
       width: dtW,
       height: Math.max(MIN_WINDOW_SIZE, Math.round(availHeight)),
+    },
+  };
+}
+
+/**
+ * 根据 CSS 视口宽度返回主流前端框架断点名称（Tailwind CSS / Bootstrap 5）。
+ */
+export function getBreakpointBadge(
+  viewportWidth: number | null,
+  preset: BreakpointPreset
+): string | null {
+  if (preset === 'off' || viewportWidth === null || !Number.isFinite(viewportWidth) || viewportWidth <= 0) {
+    return null;
+  }
+
+  if (preset === 'bootstrap') {
+    if (viewportWidth >= 1400) return 'xxl';
+    if (viewportWidth >= 1200) return 'xl';
+    if (viewportWidth >= 992) return 'lg';
+    if (viewportWidth >= 768) return 'md';
+    if (viewportWidth >= 576) return 'sm';
+    return 'xs';
+  }
+
+  // Tailwind CSS default breakpoints
+  if (viewportWidth >= 1536) return '2xl';
+  if (viewportWidth >= 1280) return 'xl';
+  if (viewportWidth >= 1024) return 'lg';
+  if (viewportWidth >= 768) return 'md';
+  if (viewportWidth >= 640) return 'sm';
+  return 'xs';
+}
+
+export const MIN_PAIRED_DEVTOOLS_WIDTH = 360;
+
+/**
+ * 手机/平板紧凑预览窗 + 独立 DevTools 自动贴边布局：
+ * 主窗口靠工作区左边缘（垂直居中或贴顶），独立 DevTools 紧贴其右侧占满剩余宽度。
+ * 若右侧剩余宽度不足 360px，返回 null（不强行挤压）。
+ */
+export function computePairedDevToolsLayout(
+  mainSize: { width: number; height: number },
+  workArea: ScreenWorkArea | undefined
+): SplitLayoutResult | null {
+  if (!workArea || workArea.availWidth <= 0 || workArea.availHeight <= 0) {
+    return null;
+  }
+
+  const remainingW = workArea.availWidth - mainSize.width;
+  if (remainingW < MIN_PAIRED_DEVTOOLS_WIDTH) {
+    return null;
+  }
+
+  const mainLeft = Math.round(workArea.availLeft);
+  const mainTop = Math.max(
+    Math.round(workArea.availTop),
+    Math.round(workArea.availTop + (workArea.availHeight - mainSize.height) / 2)
+  );
+
+  return {
+    main: {
+      left: mainLeft,
+      top: mainTop,
+      width: Math.round(mainSize.width),
+      height: Math.round(mainSize.height),
+    },
+    devtools: {
+      left: Math.round(workArea.availLeft + mainSize.width),
+      top: Math.round(workArea.availTop),
+      width: Math.round(remainingW),
+      height: Math.round(workArea.availHeight),
     },
   };
 }

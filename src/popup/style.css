@@ -210,6 +210,17 @@ html, body {
   letter-spacing: 0.04em;
 }
 
+.bp-pill {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .zoom-pill {
   padding: 0 5px;
   border-radius: 4px;
@@ -249,8 +260,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
+  gap: 6px;
+  padding: 7px 9px;
   border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -260,7 +271,7 @@ html, body {
 .devtools-head {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -282,10 +293,12 @@ html, body {
 }
 
 .devtools-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .helper-dot {
@@ -304,29 +317,30 @@ html, body {
 .devtools-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .dt-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 7px;
+  gap: 3px;
+  height: 24px;
+  padding: 0 6.5px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface-subtle);
   color: var(--text-secondary);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 550;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 130ms ease;
 }
 
 .dt-pill svg {
-  width: 12.5px;
-  height: 12.5px;
+  width: 11.5px;
+  height: 11.5px;
 }
 
 .dt-pill:hover {
@@ -345,9 +359,9 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface-subtle);
   color: var(--text-secondary);
@@ -356,14 +370,20 @@ html, body {
 }
 
 .dt-icon-btn svg {
-  width: 13px;
-  height: 13px;
+  width: 12.5px;
+  height: 12.5px;
 }
 
 .dt-icon-btn:hover {
   border-color: var(--border-strong);
   color: var(--accent);
   background: var(--surface);
+}
+
+.dt-icon-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
 }
 
 /* Presets */

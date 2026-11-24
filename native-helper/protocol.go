@@ -12,10 +12,11 @@ import (
 const (
 	MaxMessageBytes     = 1024 * 1024 // 1 MB Native Messaging limit
 	DefaultRollupHeight = 40          // Logical px height for title bar roll-up
+	DefaultOpacityPct   = 82          // Translucent opacity percentage (50-95)
 )
 
 // HelperVersion can be overridden at build time via -ldflags "-X main.HelperVersion=x.y.z".
-var HelperVersion = "1.1.0"
+var HelperVersion = "1.3.0"
 
 type Rect struct {
 	Left   int `json:"left"`
@@ -29,16 +30,19 @@ type Request struct {
 	Browser      string `json:"browser,omitempty"`
 	Target       *Rect  `json:"target,omitempty"`
 	RollupHeight int    `json:"rollupHeight,omitempty"`
+	Opacity      int    `json:"opacity,omitempty"` // 50-95 percentage
 }
 
 type Response struct {
-	OK        bool   `json:"ok"`
-	Version   string `json:"version,omitempty"`
-	Found     bool   `json:"found,omitempty"`
-	Pinned    bool   `json:"pinned,omitempty"`
-	RolledUp  bool   `json:"rolledUp,omitempty"`
-	Title     string `json:"title,omitempty"`
-	Error     string `json:"error,omitempty"`
+	OK          bool   `json:"ok"`
+	Version     string `json:"version,omitempty"`
+	Found       bool   `json:"found,omitempty"`
+	Pinned      bool   `json:"pinned,omitempty"`
+	RolledUp    bool   `json:"rolledUp,omitempty"`
+	Translucent bool   `json:"translucent,omitempty"`
+	Opacity     int    `json:"opacity,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Error       string `json:"error,omitempty"`
 }
 
 type WindowCandidate struct {

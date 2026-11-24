@@ -23,6 +23,9 @@
   "cmdDevToolsSplit": {
     "message": "Split screen: browser + undocked DevTools"
   },
+  "cmdDevToolsOpacity": {
+    "message": "Toggle translucent mode for undocked DevTools"
+  },
   "cmdPreset1": {
     "message": "Apply preset #1"
   },

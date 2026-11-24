@@ -11,6 +11,7 @@ export type WindowAlignment =
 
 export type TooltipPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 export type TooltipDisplayMode = 'both' | 'viewport' | 'window';
+export type BreakpointPreset = 'tailwind' | 'bootstrap' | 'off';
 export type LanguageSetting = 'auto' | 'zh' | 'en';
 
 export interface Preset {
@@ -33,11 +34,14 @@ export interface Settings {
   tooltipDuration: number; // ms
   tooltipPosition: TooltipPosition;
   tooltipDisplay: TooltipDisplayMode;
+  breakpointPreset: BreakpointPreset;
   enablePageShortcuts: boolean;
   autoZoomOversized: boolean; // 目标 Viewport 超出当前屏幕可用尺寸时自动降低页面 Zoom 以精准模拟
   language: LanguageSetting;
   devtoolsRollupHeight: number; // logical px for Win32 title bar rollup
   devtoolsSplitRatio: number; // 0.35 - 0.80 main browser width ratio
+  devtoolsOpacity: number; // 50 - 95 percentage when translucent
+  devtoolsAutoDockCompact: boolean; // 点击手机/平板预设时，若存在独立 DevTools 则自动靠左并将 DevTools 紧贴右侧
 }
 
 export type SplitDirection = 'right' | 'bottom';
@@ -50,6 +54,8 @@ export interface DevToolsState {
   helperVersion: string | null;
   pinned: boolean;
   rolledUp: boolean;
+  translucent: boolean;
+  opacity: number;
   title: string | null;
 }
 
@@ -111,6 +117,7 @@ export interface ResizePayload {
   top?: number;
   screen?: ScreenWorkArea;
   popOut?: boolean;
+  presetIcon?: DeviceType;
 }
 
 export interface ExportBundle {
@@ -130,6 +137,7 @@ export type RuntimeMessage =
   | { type: 'GET_DEVTOOLS_STATE' }
   | { type: 'TOGGLE_DEVTOOLS_PIN' }
   | { type: 'TOGGLE_DEVTOOLS_ROLLUP' }
+  | { type: 'TOGGLE_DEVTOOLS_OPACITY' }
   | { type: 'TOGGLE_DEVTOOLS_MINIMIZE' }
   | { type: 'SPLIT_DEVTOOLS'; direction: SplitDirection; screen?: ScreenWorkArea }
   | { type: 'QUERY_PAGE_METRICS' }

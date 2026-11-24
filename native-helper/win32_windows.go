@@ -22,6 +22,9 @@ var (
 	procGetWindowTextLengthW         = user32.NewProc("GetWindowTextLengthW")
 	procGetWindowRect                = user32.NewProc("GetWindowRect")
 	procGetWindowLongPtrW            = user32.NewProc("GetWindowLongPtrW")
+	procSetWindowLongPtrW            = user32.NewProc("SetWindowLongPtrW")
+	procGetLayeredWindowAttributes   = user32.NewProc("GetLayeredWindowAttributes")
+	procSetLayeredWindowAttributes   = user32.NewProc("SetLayeredWindowAttributes")
 	procSetWindowPos                 = user32.NewProc("SetWindowPos")
 	procSetWindowRgn                 = user32.NewProc("SetWindowRgn")
 	procGetWindowRgnBox              = user32.NewProc("GetWindowRgnBox")
@@ -38,6 +41,8 @@ var (
 
 const (
 	wsExTopmost                   = 0x00000008
+	wsExLayered                   = 0x00080000
+	lwaAlpha                      = 0x00000002
 	swpNoSize                     = 0x0001
 	swpNoMove                     = 0x0002
 	swpNoActivate                 = 0x0010
@@ -242,6 +247,63 @@ func setWindowRolledUp(hwnd uintptr, rollUp bool, physW, dpi, logicalHeight int)
 	return nil
 }
 
+func getWindowOpacity(hwnd uintptr) (translucent bool, pct int) {
+	style, _, _ := procGetWindowLongPtrW.Call(hwnd, gwlExStyle)
+	if (style & wsExLayered) == 0 {
+		return false, 100
+	}
+	var alpha byte
+	var flags uint32
+	ret, _, _ := procGetLayeredWindowAttributes.Call(
+		hwnd,
+		0,
+		uintptr(unsafe.Pointer(&alpha)),
+		uintptr(unsafe.Pointer(&flags)),
+	)
+	if ret == 0 || (flags&lwaAlpha) == 0 {
+		return false, 100
+	}
+	percent := int(math.Round(float64(alpha) * 100.0 / 255.0))
+	if percent >= 98 {
+		return false, 100
+	}
+	return true, percent
+}
+
+func setWindowOpacity(hwnd uintptr, translucent bool, targetPct int) error {
+	style, _, _ := procGetWindowLongPtrW.Call(hwnd, gwlExStyle)
+	if !translucent {
+		if (style & wsExLayered) != 0 {
+			procSetLayeredWindowAttributes.Call(hwnd, 0, 255, lwaAlpha)
+			procSetWindowLongPtrW.Call(hwnd, gwlExStyle, style&^wsExLayered)
+			procRedrawWindow.Call(hwnd, 0, 0, rdwInvalidate|rdwErase|rdwFrame|rdwAllChildren|rdwUpdateNow)
+		}
+		return nil
+	}
+
+	if targetPct < 45 || targetPct > 95 {
+		targetPct = DefaultOpacityPct
+	}
+	alpha := byte(math.Round(float64(targetPct) * 255.0 / 100.0))
+	if alpha < 110 {
+		alpha = 110
+	}
+
+	addedLayered := false
+	if (style & wsExLayered) == 0 {
+		procSetWindowLongPtrW.Call(hwnd, gwlExStyle, style|wsExLayered)
+		addedLayered = true
+	}
+	ret, _, err := procSetLayeredWindowAttributes.Call(hwnd, 0, uintptr(alpha), lwaAlpha)
+	if ret == 0 {
+		if addedLayered {
+			procSetWindowLongPtrW.Call(hwnd, gwlExStyle, style)
+		}
+		return fmt.Errorf("SetLayeredWindowAttributes failed: %w", err)
+	}
+	return nil
+}
+
 func handlePlatformRequest(req *Request) Response {
 	if req.Action == "ping" {
 		return Response{OK: true, Version: HelperVersion}
@@ -259,16 +321,19 @@ func handlePlatformRequest(req *Request) Response {
 
 	pinned := isWindowPinned(win.Handle)
 	rolledUp := isWindowRolledUp(win.Handle, win.DPI)
+	translucent, opacity := getWindowOpacity(win.Handle)
 
 	switch req.Action {
 	case "get_status":
 		return Response{
-			OK:       true,
-			Version:  HelperVersion,
-			Found:    true,
-			Pinned:   pinned,
-			RolledUp: rolledUp,
-			Title:    win.Title,
+			OK:          true,
+			Version:     HelperVersion,
+			Found:       true,
+			Pinned:      pinned,
+			RolledUp:    rolledUp,
+			Translucent: translucent,
+			Opacity:     opacity,
+			Title:       win.Title,
 		}
 
 	case "toggle_pin":
@@ -277,12 +342,14 @@ func handlePlatformRequest(req *Request) Response {
 			return Response{OK: false, Error: err.Error()}
 		}
 		return Response{
-			OK:       true,
-			Version:  HelperVersion,
-			Found:    true,
-			Pinned:   isWindowPinned(win.Handle),
-			RolledUp: rolledUp,
-			Title:    win.Title,
+			OK:          true,
+			Version:     HelperVersion,
+			Found:       true,
+			Pinned:      isWindowPinned(win.Handle),
+			RolledUp:    rolledUp,
+			Translucent: translucent,
+			Opacity:     opacity,
+			Title:       win.Title,
 		}
 
 	case "set_pin":
@@ -290,12 +357,14 @@ func handlePlatformRequest(req *Request) Response {
 			return Response{OK: false, Error: err.Error()}
 		}
 		return Response{
-			OK:       true,
-			Version:  HelperVersion,
-			Found:    true,
-			Pinned:   isWindowPinned(win.Handle),
-			RolledUp: rolledUp,
-			Title:    win.Title,
+			OK:          true,
+			Version:     HelperVersion,
+			Found:       true,
+			Pinned:      isWindowPinned(win.Handle),
+			RolledUp:    rolledUp,
+			Translucent: translucent,
+			Opacity:     opacity,
+			Title:       win.Title,
 		}
 
 	case "toggle_rollup":
@@ -308,12 +377,35 @@ func handlePlatformRequest(req *Request) Response {
 			_ = setWindowPinned(win.Handle, true)
 		}
 		return Response{
-			OK:       true,
-			Version:  HelperVersion,
-			Found:    true,
-			Pinned:   isWindowPinned(win.Handle),
-			RolledUp: isWindowRolledUp(win.Handle, win.DPI),
-			Title:    win.Title,
+			OK:          true,
+			Version:     HelperVersion,
+			Found:       true,
+			Pinned:      isWindowPinned(win.Handle),
+			RolledUp:    isWindowRolledUp(win.Handle, win.DPI),
+			Translucent: translucent,
+			Opacity:     opacity,
+			Title:       win.Title,
+		}
+
+	case "toggle_opacity":
+		next := !translucent
+		if err := setWindowOpacity(win.Handle, next, req.Opacity); err != nil {
+			return Response{OK: false, Error: err.Error()}
+		}
+		// 开启半透明透视时自动确保置顶，否则藏在底层失去透视意义
+		if next && !pinned {
+			_ = setWindowPinned(win.Handle, true)
+		}
+		nowTrans, nowOpacity := getWindowOpacity(win.Handle)
+		return Response{
+			OK:          true,
+			Version:     HelperVersion,
+			Found:       true,
+			Pinned:      isWindowPinned(win.Handle),
+			RolledUp:    rolledUp,
+			Translucent: nowTrans,
+			Opacity:     nowOpacity,
+			Title:       win.Title,
 		}
 
 	default:

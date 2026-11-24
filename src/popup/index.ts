@@ -1,4 +1,5 @@
 import { ext } from '../shared/ext';
+import { getBreakpointBadge } from '../shared/geometry';
 import { createTranslator, type I18nKey } from '../shared/i18n';
 import { createDeviceIcon, createUiIcon, setIconContent } from '../shared/icons';
 import { loadAppData, savePresets } from '../shared/storage';
@@ -87,6 +88,11 @@ function updateMetricsUI(dims: CurrentDimensions): void {
       ? `${dims.viewportWidth} × ${dims.viewportHeight}`
       : '— × —';
   winEl.textContent = `${dims.windowWidth} × ${dims.windowHeight}`;
+
+  const bpPill = $<HTMLSpanElement>('bp-pill');
+  const bp = dims.isRestrictedPage ? null : getBreakpointBadge(dims.viewportWidth, settings.breakpointPreset);
+  bpPill.textContent = bp ?? '';
+  bpPill.classList.toggle('hidden', !bp);
 
   const zoomPill = $<HTMLSpanElement>('zoom-pill');
   const zoomPct = Math.round(dims.zoom * 100);
@@ -204,6 +210,12 @@ function showAppliedFeedback(dims: CurrentDimensions): void {
   } else {
     showToast(t('appliedToast'));
   }
+  // 若存在独立 DevTools（例如触发了自动贴边联动并展开了卷帘），同步刷新 DevTools 快捷条状态
+  if (devToolsState?.hasDevTools) {
+    void sendBg<DevToolsState>({ type: 'GET_DEVTOOLS_STATE' })
+      .then((dt) => updateDevToolsUI(dt))
+      .catch(() => {});
+  }
 }
 
 async function applyPreset(presetId: string, popOut: boolean): Promise<void> {
@@ -286,6 +298,10 @@ function applyStaticLabels(): void {
   setIconContent($<HTMLSpanElement>('devtools-icon'), createUiIcon('terminal'));
   $<HTMLSpanElement>('lbl-devtools').textContent = 'DevTools';
 
+  const btnOpacity = $<HTMLButtonElement>('btn-dt-opacity');
+  setIconContent(btnOpacity, createUiIcon('opacity'));
+  btnOpacity.title = t('devtoolsOpacityTitle');
+
   const btnSplitR = $<HTMLButtonElement>('btn-dt-split-r');
   setIconContent(btnSplitR, createUiIcon('splitRight'));
   btnSplitR.title = t('devtoolsSplitRightTitle');
@@ -327,6 +343,12 @@ function updateDevToolsUI(state: DevToolsState): void {
     createUiIcon(isCollapsed ? 'expand' : 'rollup'),
     isCollapsed ? t('devtoolsRolledUp') : t('devtoolsRollup')
   );
+
+  const opacityBtn = $<HTMLButtonElement>('btn-dt-opacity');
+  opacityBtn.classList.toggle('active', state.translucent);
+  opacityBtn.title = state.translucent
+    ? `${t('devtoolsOpacityTitle')} (${state.opacity}%)`
+    : t('devtoolsOpacityTitle');
 }
 
 function bindEvents(): void {
@@ -479,6 +501,30 @@ function bindEvents(): void {
       }
     } catch {
       // ignore
+    }
+  });
+
+  $<HTMLButtonElement>('btn-dt-opacity').addEventListener('click', async () => {
+    try {
+      const res = await sendBg<{ state: DevToolsState; changed: boolean; needsHelper: boolean }>({
+        type: 'TOGGLE_DEVTOOLS_OPACITY',
+      });
+      updateDevToolsUI(res.state);
+      if (res.needsHelper) {
+        showToast(t('devtoolsHelperNeeded'));
+        openDevToolsOptions();
+      } else if (res.changed) {
+        showToast(
+          res.state.translucent
+            ? `${t('devtoolsOpacityOnToast')} (${res.state.opacity}%)`
+            : t('devtoolsOpacityOffToast')
+        );
+      } else {
+        showToast(t('devtoolsNotFound'));
+      }
+    } catch {
+      showToast(t('devtoolsHelperNeeded'));
+      openDevToolsOptions();
     }
   });
 

@@ -82,11 +82,14 @@ export const DEFAULT_SETTINGS: Settings = {
   tooltipDuration: 2000,
   tooltipPosition: 'bottom-right',
   tooltipDisplay: 'both',
+  breakpointPreset: 'tailwind',
   enablePageShortcuts: true,
   autoZoomOversized: true,
   language: 'auto',
   devtoolsRollupHeight: 40,
   devtoolsSplitRatio: 0.62,
+  devtoolsOpacity: 82,
+  devtoolsAutoDockCompact: true,
 };
 
 export const DEFAULT_OVERHEAD = {

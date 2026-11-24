@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   computeAutoZoomForViewport,
   computeFrameOverhead,
+  computePairedDevToolsLayout,
   computeSplitLayout,
   computeTargetWindowSize,
   computeWindowPosition,
+  getBreakpointBadge,
   normalizeShortcutFromEvent,
 } from '../src/shared/geometry';
 
@@ -154,5 +156,34 @@ describe('geometry', () => {
 
     // 未超屏（如 1280×720）返回 null
     expect(computeAutoZoomForViewport(1280, 720, laptop150, overhead)).toBeNull();
+  });
+
+  it('resolves Tailwind and Bootstrap responsive breakpoints accurately', () => {
+    expect(getBreakpointBadge(375, 'tailwind')).toBe('xs');
+    expect(getBreakpointBadge(640, 'tailwind')).toBe('sm');
+    expect(getBreakpointBadge(768, 'tailwind')).toBe('md');
+    expect(getBreakpointBadge(1024, 'tailwind')).toBe('lg');
+    expect(getBreakpointBadge(1280, 'tailwind')).toBe('xl');
+    expect(getBreakpointBadge(1536, 'tailwind')).toBe('2xl');
+
+    expect(getBreakpointBadge(575, 'bootstrap')).toBe('xs');
+    expect(getBreakpointBadge(576, 'bootstrap')).toBe('sm');
+    expect(getBreakpointBadge(992, 'bootstrap')).toBe('lg');
+    expect(getBreakpointBadge(1400, 'bootstrap')).toBe('xxl');
+
+    expect(getBreakpointBadge(1280, 'off')).toBeNull();
+    expect(getBreakpointBadge(null, 'tailwind')).toBeNull();
+  });
+
+  it('computes paired mobile/tablet + DevTools dock layout and skips when space is too tight', () => {
+    const area = { availLeft: 0, availTop: 0, availWidth: 1707, availHeight: 1020 };
+    const paired = computePairedDevToolsLayout({ width: 409, height: 940 }, area);
+    expect(paired).toEqual({
+      main: { left: 0, top: 40, width: 409, height: 940 },
+      devtools: { left: 409, top: 0, width: 1298, height: 1020 },
+    });
+
+    // 右侧剩余不足 360px 时返回 null，不强行挤压
+    expect(computePairedDevToolsLayout({ width: 1400, height: 900 }, area)).toBeNull();
   });
 });

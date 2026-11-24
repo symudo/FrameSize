@@ -3,14 +3,18 @@ import { ext, getSessionStorage } from '../shared/ext';
 import {
   computeAutoZoomForViewport,
   computeFrameOverhead,
+  computePairedDevToolsLayout,
   computeTargetWindowSize,
   computeWindowPosition,
 } from '../shared/geometry';
 import { initializeStorageDefaults, loadAppData } from '../shared/storage';
 import {
+  dockDevToolsToRect,
+  findDevToolsWindow,
   getDevToolsState,
   splitBrowserWithDevTools,
   toggleDevToolsMinimize,
+  toggleDevToolsOpacity,
   toggleDevToolsPin,
   toggleDevToolsRollup,
 } from './devtools';
@@ -460,13 +464,22 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
     effectiveZoom
   );
 
-  const pos = computeWindowPosition(
-    payload.alignment,
-    targetSize.width,
-    targetSize.height,
-    workArea,
-    { left: payload.left, top: payload.top }
-  );
+  // 手机/平板预设 + 独立 DevTools 自动贴边联动（预览窗靠左、DevTools 紧贴右侧补满剩余屏幕）
+  let pairedLayout: ReturnType<typeof computePairedDevToolsLayout> = null;
+  const isCompactPreset = payload.presetIcon === 'mobile' || payload.presetIcon === 'tablet';
+  if (settings.devtoolsAutoDockCompact && isCompactPreset && workArea) {
+    const dtWin = await findDevToolsWindow();
+    if (dtWin) {
+      pairedLayout = computePairedDevToolsLayout(targetSize, workArea);
+    }
+  }
+
+  const pos = pairedLayout
+    ? { left: pairedLayout.main.left, top: pairedLayout.main.top }
+    : computeWindowPosition(payload.alignment, targetSize.width, targetSize.height, workArea, {
+        left: payload.left,
+        top: payload.top,
+      });
 
   // 最大化或全屏态必须先恢复 normal，否则 Chrome/Firefox 会报错或忽略宽高
   if (win.state && win.state !== 'normal') {
@@ -500,13 +513,15 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
           200,
           Math.round((updatedWin.height ?? targetSize.height) + errCssH * effectiveZoom)
         );
-        const refinedPos = computeWindowPosition(
-          payload.alignment,
-          refinedW,
-          refinedH,
-          workArea,
-          { left: payload.left, top: payload.top }
-        );
+        if (pairedLayout && workArea) {
+          pairedLayout = computePairedDevToolsLayout({ width: refinedW, height: refinedH }, workArea);
+        }
+        const refinedPos = pairedLayout
+          ? { left: pairedLayout.main.left, top: pairedLayout.main.top }
+          : computeWindowPosition(payload.alignment, refinedW, refinedH, workArea, {
+              left: payload.left,
+              top: payload.top,
+            });
         updatedWin = await ext.windows.update(win.id, {
           width: refinedW,
           height: refinedH,
@@ -526,6 +541,10 @@ async function applyResize(payload: ResizePayload): Promise<CurrentDimensions> {
         await setCachedOverhead(finalOverhead);
       }
     }
+  }
+
+  if (pairedLayout) {
+    await dockDevToolsToRect(pairedLayout.devtools);
   }
 
   await notifyTooltip(tab?.id, updatedWin.width, updatedWin.height);
@@ -615,6 +634,7 @@ async function applyPresetById(
     top: preset.top,
     screen,
     popOut,
+    presetIcon: preset.icon,
   });
 }
 
@@ -638,6 +658,8 @@ async function handleMessage(message: RuntimeMessage): Promise<unknown> {
       return toggleDevToolsPin();
     case 'TOGGLE_DEVTOOLS_ROLLUP':
       return toggleDevToolsRollup();
+    case 'TOGGLE_DEVTOOLS_OPACITY':
+      return toggleDevToolsOpacity();
     case 'TOGGLE_DEVTOOLS_MINIMIZE': {
       return toggleDevToolsMinimize();
     }
@@ -709,6 +731,10 @@ if (ext.commands?.onCommand) {
       }
       if (command === 'toggle-devtools-rollup') {
         await toggleDevToolsRollup();
+        return;
+      }
+      if (command === 'toggle-devtools-opacity') {
+        await toggleDevToolsOpacity();
         return;
       }
       if (command === 'split-devtools') {

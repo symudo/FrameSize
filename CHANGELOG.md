@@ -2,6 +2,18 @@
 
 All notable changes to **FrameSize** are documented in this file.
 
+## [1.3.0] - 2026-11-24
+
+### Added
+- **置顶 DevTools 半透明透视模式**：Windows Native Helper 新增 Win32 `WS_EX_LAYERED` + `SetLayeredWindowAttributes` 透明度控制（支持 50%–95% 自定义，默认 82%），开启半透明时自动确保置顶，关闭时彻底移除 Layered 样式恢复原生渲染；Popup 快捷条新增一键切换按钮，并支持浏览器全局快捷键自定义绑定。
+- **CSS 响应式断点指示器**：在 Popup 视口指标卡及页面 Shadow DOM Resize Tooltip 上实时显示当前宽度命中的响应式断点徽标，支持在设置页切换 **Tailwind CSS**（`xs/sm/md/lg/xl/2xl`）、**Bootstrap 5**（`xs/sm/md/lg/xl/xxl`）或关闭。
+- **手机/平板预设自动贴边联动 DevTools**：检测到独立 DevTools 窗口开启时，点击手机/平板预设自动将预览窗口靠左对齐，并让 DevTools 紧贴右侧铺满剩余屏幕（右侧可用宽度不足 `360px` 时自动跳过避免挤压）；支持在设置页「DevTools 助手」开关控制。
+
+### Fixed
+- 修复应用手机/平板预设触发 DevTools 自动贴边并展开卷帘后，Popup 快捷条折叠按钮状态未即时刷新的问题。
+- 优化 Popup DevTools 快捷条 5 按钮布局宽度与间距，避免在 364px 弹窗宽度下中英文切换时出现挤压溢出。
+- 加固 Win32 `SetLayeredWindowAttributes` 失败路径，自动回滚刚添加的 `WS_EX_LAYERED` 窗口样式。
+
 ## [1.2.0] - 2026-11-24
 
 ### Added

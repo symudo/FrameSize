@@ -120,6 +120,12 @@ export function sanitizeSettings(raw: unknown): Settings {
       display === 'both' || display === 'viewport' || display === 'window'
         ? display
         : DEFAULT_SETTINGS.tooltipDisplay,
+    breakpointPreset:
+      obj.breakpointPreset === 'tailwind' ||
+      obj.breakpointPreset === 'bootstrap' ||
+      obj.breakpointPreset === 'off'
+        ? obj.breakpointPreset
+        : DEFAULT_SETTINGS.breakpointPreset,
     enablePageShortcuts:
       typeof obj.enablePageShortcuts === 'boolean'
         ? obj.enablePageShortcuts
@@ -141,6 +147,16 @@ export function sanitizeSettings(raw: unknown): Settings {
       Number(obj.devtoolsSplitRatio) <= 0.8
         ? Number(Number(obj.devtoolsSplitRatio).toFixed(2))
         : DEFAULT_SETTINGS.devtoolsSplitRatio,
+    devtoolsOpacity:
+      Number.isFinite(Number(obj.devtoolsOpacity)) &&
+      Number(obj.devtoolsOpacity) >= 50 &&
+      Number(obj.devtoolsOpacity) <= 95
+        ? Math.round(Number(obj.devtoolsOpacity))
+        : DEFAULT_SETTINGS.devtoolsOpacity,
+    devtoolsAutoDockCompact:
+      typeof obj.devtoolsAutoDockCompact === 'boolean'
+        ? obj.devtoolsAutoDockCompact
+        : DEFAULT_SETTINGS.devtoolsAutoDockCompact,
   };
 }
 

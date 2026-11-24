@@ -23,6 +23,9 @@
   "cmdDevToolsSplit": {
     "message": "网页与独立 DevTools 一键防遮挡分屏"
   },
+  "cmdDevToolsOpacity": {
+    "message": "切换独立 DevTools 半透明模式"
+  },
   "cmdPreset1": {
     "message": "应用第 1 个预设"
   },

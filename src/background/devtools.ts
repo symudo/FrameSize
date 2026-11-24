@@ -4,10 +4,11 @@ import { loadAppData } from '../shared/storage';
 import type { DevToolsState, ScreenWorkArea, SplitDirection } from '../shared/types';
 
 interface NativeHelperRequest {
-  action: 'ping' | 'get_status' | 'toggle_pin' | 'set_pin' | 'toggle_rollup';
+  action: 'ping' | 'get_status' | 'toggle_pin' | 'set_pin' | 'toggle_rollup' | 'toggle_opacity';
   browser?: 'chrome' | 'edge' | 'firefox';
   target?: { left: number; top: number; width: number; height: number };
   rollupHeight?: number;
+  opacity?: number;
 }
 
 interface NativeHelperResponse {
@@ -16,6 +17,8 @@ interface NativeHelperResponse {
   found?: boolean;
   pinned?: boolean;
   rolledUp?: boolean;
+  translucent?: boolean;
+  opacity?: number;
   title?: string;
   error?: string;
 }
@@ -76,6 +79,8 @@ export async function getDevToolsState(): Promise<DevToolsState> {
       helperVersion: ping?.version ?? null,
       pinned: false,
       rolledUp: false,
+      translucent: false,
+      opacity: 100,
       title: null,
     };
   }
@@ -93,6 +98,8 @@ export async function getDevToolsState(): Promise<DevToolsState> {
     helperVersion: nativeStatus?.version ?? null,
     pinned: Boolean(nativeStatus?.ok && nativeStatus.found && nativeStatus.pinned),
     rolledUp: Boolean(nativeStatus?.ok && nativeStatus.found && nativeStatus.rolledUp),
+    translucent: Boolean(nativeStatus?.ok && nativeStatus.found && nativeStatus.translucent),
+    opacity: nativeStatus?.ok && nativeStatus.found && nativeStatus.opacity ? nativeStatus.opacity : 100,
     title: nativeStatus?.title ?? null,
   };
 }
@@ -132,6 +139,53 @@ export async function toggleDevToolsPin(): Promise<{
       helperVersion: res.version ?? null,
       pinned: Boolean(res.pinned),
       rolledUp: Boolean(res.rolledUp),
+      translucent: Boolean(res.translucent),
+      opacity: res.opacity ?? 100,
+      title: res.title ?? null,
+    },
+    changed: Boolean(res.found),
+    needsHelper: false,
+  };
+}
+
+export async function toggleDevToolsOpacity(): Promise<{
+  state: DevToolsState;
+  changed: boolean;
+  needsHelper: boolean;
+}> {
+  const dtWin = await findDevToolsWindow();
+  if (!dtWin || dtWin.id === undefined) {
+    return { state: await getDevToolsState(), changed: false, needsHelper: false };
+  }
+
+  let targetWin = dtWin;
+  if (dtWin.state === 'minimized') {
+    targetWin = await ext.windows.update(dtWin.id, { state: 'normal', focused: false });
+    await sleep(60);
+  }
+
+  const { settings } = await loadAppData();
+  const res = await sendNative({
+    action: 'toggle_opacity',
+    target: toTargetRect(targetWin),
+    opacity: settings.devtoolsOpacity,
+  });
+
+  if (!res || !res.ok) {
+    return { state: await getDevToolsState(), changed: false, needsHelper: true };
+  }
+
+  return {
+    state: {
+      hasDevTools: true,
+      windowId: targetWin.id ?? null,
+      minimized: false,
+      helperConnected: true,
+      helperVersion: res.version ?? null,
+      pinned: Boolean(res.pinned),
+      rolledUp: Boolean(res.rolledUp),
+      translucent: Boolean(res.translucent),
+      opacity: res.opacity ?? 100,
       title: res.title ?? null,
     },
     changed: Boolean(res.found),
@@ -195,6 +249,8 @@ export async function toggleDevToolsRollup(): Promise<{
           helperVersion: res.version ?? null,
           pinned: Boolean(res.pinned),
           rolledUp: Boolean(res.rolledUp),
+          translucent: Boolean(res.translucent),
+          opacity: res.opacity ?? 100,
           title: res.title ?? null,
         },
         mode: 'rollup',
@@ -299,4 +355,44 @@ export async function splitBrowserWithDevTools(
   ]);
 
   return { applied: true, state: await getDevToolsState() };
+}
+
+/**
+ * 将独立 DevTools 窗口恢复正常态（如曾最小化或卷帘折叠）并紧贴排布到指定矩形。
+ */
+export async function dockDevToolsToRect(rect: {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}): Promise<boolean> {
+  const dtWin = await findDevToolsWindow();
+  if (!dtWin || dtWin.id === undefined) return false;
+
+  let normalizedDt = dtWin;
+  if (dtWin.state && dtWin.state !== 'normal') {
+    normalizedDt = await ext.windows.update(dtWin.id, { state: 'normal', focused: false });
+    await sleep(50);
+  }
+
+  const { settings } = await loadAppData();
+  const status = await sendNative({
+    action: 'get_status',
+    target: toTargetRect(normalizedDt),
+  });
+  if (status?.ok && status.found && status.rolledUp) {
+    await sendNative({
+      action: 'toggle_rollup',
+      target: toTargetRect(normalizedDt),
+      rollupHeight: settings.devtoolsRollupHeight,
+    });
+  }
+
+  await ext.windows.update(dtWin.id, {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  });
+  return true;
 }

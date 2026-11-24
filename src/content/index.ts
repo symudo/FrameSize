@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS } from '../shared/defaults';
 import { ext } from '../shared/ext';
-import { normalizeShortcutFromEvent } from '../shared/geometry';
+import { getBreakpointBadge, normalizeShortcutFromEvent } from '../shared/geometry';
 import { loadAppData, STORAGE_KEYS } from '../shared/storage';
 import type { Preset, RuntimeMessage, ScreenWorkArea, Settings, ViewportMetrics } from '../shared/types';
 
@@ -12,6 +12,7 @@ if (window === window.top) {
   let tooltipEl: HTMLDivElement | null = null;
   let vpItemEl: HTMLSpanElement | null = null;
   let vpValEl: HTMLSpanElement | null = null;
+  let bpEl: HTMLSpanElement | null = null;
   let sepEl: HTMLSpanElement | null = null;
   let winItemEl: HTMLSpanElement | null = null;
   let winValEl: HTMLSpanElement | null = null;
@@ -108,6 +109,16 @@ if (window === window.top) {
       .fs-val.primary {
         color: #818cf8;
       }
+      .fs-bp {
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(129, 140, 248, 0.22);
+        color: #c7d2fe;
+        font-size: 10px;
+        font-weight: 700;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.02em;
+      }
       .fs-sep {
         width: 1px;
         height: 14px;
@@ -125,7 +136,9 @@ if (window === window.top) {
     vpLabel.textContent = 'VP';
     vpValEl = document.createElement('span');
     vpValEl.className = 'fs-val primary';
-    vpItemEl.append(vpLabel, vpValEl);
+    bpEl = document.createElement('span');
+    bpEl.className = 'fs-bp';
+    vpItemEl.append(vpLabel, vpValEl, bpEl);
 
     sepEl = document.createElement('span');
     sepEl.className = 'fs-sep';
@@ -158,6 +171,11 @@ if (window === window.top) {
     const winH = overrideWinH ?? window.outerHeight;
 
     if (vpValEl) vpValEl.textContent = `${vpW} × ${vpH}`;
+    if (bpEl) {
+      const bp = getBreakpointBadge(vpW, settings.breakpointPreset);
+      bpEl.textContent = bp ?? '';
+      bpEl.style.display = bp ? 'inline-block' : 'none';
+    }
     if (winValEl) {
       winValEl.textContent = `${winW} × ${winH}`;
       winValEl.className = settings.tooltipDisplay === 'window' ? 'fs-val primary' : 'fs-val';

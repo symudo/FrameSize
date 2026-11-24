@@ -59,7 +59,8 @@ export type UiIconName =
   | 'splitRight'
   | 'splitBottom'
   | 'minimize'
-  | 'terminal';
+  | 'terminal'
+  | 'opacity';
 
 const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
   logo: {
@@ -190,6 +191,12 @@ const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
     shapes: [
       { tag: 'polyline', attrs: { points: '4 17 10 11 4 5' } },
       { tag: 'line', attrs: { x1: '12', y1: '19', x2: '20', y2: '19' } },
+    ],
+  },
+  opacity: {
+    shapes: [
+      { tag: 'path', attrs: { d: 'M12 2.7l5.66 5.66a8 8 0 1 1-11.32 0L12 2.7z' } },
+      { tag: 'path', attrs: { d: 'M12 18a4 4 0 0 0 4-4' } },
     ],
   },
 };
