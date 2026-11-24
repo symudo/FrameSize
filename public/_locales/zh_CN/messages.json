@@ -1,0 +1,29 @@
+{
+  "extName": {
+    "message": "FrameSize"
+  },
+  "extDescription": {
+    "message": "轻松调整浏览器窗口与网页视口尺寸，支持自定义预设、实时悬浮提示、快捷键与跨设备同步。"
+  },
+  "cmdOpenPopup": {
+    "message": "打开 FrameSize 尺寸菜单"
+  },
+  "cmdRotate": {
+    "message": "旋转当前窗口（交换宽高）"
+  },
+  "cmdUndo": {
+    "message": "恢复上一次窗口尺寸"
+  },
+  "cmdPreset1": {
+    "message": "应用第 1 个预设"
+  },
+  "cmdPreset2": {
+    "message": "应用第 2 个预设"
+  },
+  "cmdPreset3": {
+    "message": "应用第 3 个预设"
+  },
+  "cmdPreset4": {
+    "message": "应用第 4 个预设"
+  }
+}

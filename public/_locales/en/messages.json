@@ -1,0 +1,29 @@
+{
+  "extName": {
+    "message": "FrameSize"
+  },
+  "extDescription": {
+    "message": "Precision browser window and viewport resizer with presets, live tooltip, shortcuts, and sync."
+  },
+  "cmdOpenPopup": {
+    "message": "Open FrameSize popup"
+  },
+  "cmdRotate": {
+    "message": "Rotate current window (swap width & height)"
+  },
+  "cmdUndo": {
+    "message": "Restore previous window size"
+  },
+  "cmdPreset1": {
+    "message": "Apply preset #1"
+  },
+  "cmdPreset2": {
+    "message": "Apply preset #2"
+  },
+  "cmdPreset3": {
+    "message": "Apply preset #3"
+  },
+  "cmdPreset4": {
+    "message": "Apply preset #4"
+  }
+}

@@ -1,0 +1,92 @@
+import type { Preset, Settings } from './types';
+
+export const DEFAULT_PRESETS: Preset[] = [
+  {
+    id: 'mobile-se',
+    title: 'Mobile S (iPhone SE)',
+    width: 375,
+    height: 667,
+    target: 'viewport',
+    icon: 'mobile',
+    alignment: 'center',
+  },
+  {
+    id: 'mobile-pro',
+    title: 'Mobile L (iPhone 15 Pro)',
+    width: 393,
+    height: 852,
+    target: 'viewport',
+    icon: 'mobile',
+    alignment: 'center',
+  },
+  {
+    id: 'tablet-portrait',
+    title: 'Tablet Portrait (iPad)',
+    width: 768,
+    height: 1024,
+    target: 'viewport',
+    icon: 'tablet',
+    alignment: 'center',
+  },
+  {
+    id: 'tablet-landscape',
+    title: 'Tablet Landscape',
+    width: 1024,
+    height: 768,
+    target: 'viewport',
+    icon: 'tablet',
+    alignment: 'center',
+  },
+  {
+    id: 'laptop-hd',
+    title: 'Laptop HD',
+    width: 1280,
+    height: 720,
+    target: 'viewport',
+    icon: 'laptop',
+    alignment: 'center',
+  },
+  {
+    id: 'laptop-standard',
+    title: 'Laptop Standard',
+    width: 1366,
+    height: 768,
+    target: 'window',
+    icon: 'laptop',
+    alignment: 'center',
+  },
+  {
+    id: 'laptop-wide',
+    title: 'MacBook / Wide',
+    width: 1440,
+    height: 900,
+    target: 'viewport',
+    icon: 'laptop',
+    alignment: 'center',
+  },
+  {
+    id: 'desktop-fhd',
+    title: 'Desktop Full HD',
+    width: 1920,
+    height: 1080,
+    target: 'window',
+    icon: 'desktop',
+    alignment: 'center',
+  },
+];
+
+export const DEFAULT_SETTINGS: Settings = {
+  syncEnabled: true,
+  closePopupOnResize: false,
+  tooltipEnabled: true,
+  tooltipDuration: 2000,
+  tooltipPosition: 'bottom-right',
+  tooltipDisplay: 'both',
+  enablePageShortcuts: true,
+  language: 'auto',
+};
+
+export const DEFAULT_OVERHEAD = {
+  dx: 16,
+  dy: 88,
+};

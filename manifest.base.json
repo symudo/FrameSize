@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "FrameSize",
+  "description": "__MSG_extDescription__",
+  "version": "1.0.0",
+  "default_locale": "en",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "__MSG_extName__",
+    "default_popup": "popup/index.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/index.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "description": "__MSG_cmdOpenPopup__"
+    },
+    "rotate-window": {
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
+      "description": "__MSG_cmdRotate__"
+    },
+    "undo-resize": {
+      "suggested_key": {
+        "default": "Alt+Shift+Z"
+      },
+      "description": "__MSG_cmdUndo__"
+    },
+    "apply-preset-1": {
+      "description": "__MSG_cmdPreset1__"
+    },
+    "apply-preset-2": {
+      "description": "__MSG_cmdPreset2__"
+    },
+    "apply-preset-3": {
+      "description": "__MSG_cmdPreset3__"
+    },
+    "apply-preset-4": {
+      "description": "__MSG_cmdPreset4__"
+    }
+  }
+}

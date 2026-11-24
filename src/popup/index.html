@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FrameSize</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <span class="brand-icon" id="brand-icon"></span>
+        <span class="brand-name">FrameSize</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-rotate" type="button"></button>
+        <button class="icon-btn" id="btn-undo" type="button" disabled></button>
+        <button class="icon-btn" id="btn-maximize" type="button"></button>
+        <button class="icon-btn" id="btn-capture" type="button"></button>
+        <button class="icon-btn" id="btn-settings" type="button"></button>
+      </div>
+    </header>
+
+    <section class="metrics-card">
+      <div class="metric">
+        <div class="metric-label-row">
+          <span class="metric-label" id="lbl-viewport">Viewport</span>
+          <span class="zoom-pill hidden" id="zoom-pill">100%</span>
+        </div>
+        <span class="metric-value primary" id="val-viewport">-- × --</span>
+      </div>
+      <div class="metric-divider"></div>
+      <div class="metric">
+        <span class="metric-label" id="lbl-window">Window</span>
+        <span class="metric-value" id="val-window">-- × --</span>
+      </div>
+    </section>
+
+    <div class="restricted-banner hidden" id="restricted-banner"></div>
+
+    <section class="presets-section">
+      <div class="section-head">
+        <span class="section-title" id="lbl-presets">Presets</span>
+      </div>
+      <ul class="preset-list" id="preset-list"></ul>
+    </section>
+
+    <section class="custom-panel">
+      <form class="custom-form" id="custom-form" novalidate>
+        <div class="dim-inputs">
+          <label class="input-chip">
+            <span id="lbl-w">W</span>
+            <input type="number" id="input-width" min="200" max="9999" placeholder="1280" />
+          </label>
+          <span class="dim-x">×</span>
+          <label class="input-chip">
+            <span id="lbl-h">H</span>
+            <input type="number" id="input-height" min="200" max="9999" placeholder="720" />
+          </label>
+        </div>
+
+        <div class="custom-controls">
+          <div class="segmented" role="group">
+            <button type="button" class="seg-btn active" data-target="viewport" id="seg-viewport">VP</button>
+            <button type="button" class="seg-btn" data-target="window" id="seg-window">WIN</button>
+          </div>
+          <button type="button" class="btn-secondary icon-only" id="btn-save-custom"></button>
+          <button type="submit" class="btn-primary" id="btn-apply">Apply</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>

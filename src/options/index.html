@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FrameSize Settings</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-icon" id="brand-icon"></span>
+        <div>
+          <div class="brand-name">FrameSize</div>
+          <div class="brand-ver">v1.0.0</div>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button type="button" class="nav-item active" data-tab="presets" id="nav-presets">Presets</button>
+        <button type="button" class="nav-item" data-tab="tooltip" id="nav-tooltip">Tooltip</button>
+        <button type="button" class="nav-item" data-tab="general" id="nav-general">General</button>
+        <button type="button" class="nav-item" data-tab="backup" id="nav-backup">Backup</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <!-- Tab 1: Presets -->
+      <section class="panel active" id="panel-presets">
+        <header class="panel-header">
+          <div>
+            <h1 id="heading-presets">Presets</h1>
+            <p class="subtitle" id="subtitle-drag">Drag to reorder</p>
+          </div>
+          <div class="header-btns">
+            <button type="button" class="btn-secondary" id="btn-reset-defaults">Reset Defaults</button>
+            <button type="button" class="btn-primary" id="btn-add-preset">+ Add Preset</button>
+          </div>
+        </header>
+
+        <ul class="preset-table" id="preset-table"></ul>
+      </section>
+
+      <!-- Tab 2: Tooltip -->
+      <section class="panel" id="panel-tooltip">
+        <header class="panel-header">
+          <div>
+            <h1 id="heading-tooltip">Resize Tooltip</h1>
+          </div>
+        </header>
+
+        <div class="card settings-list">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-tooltip-enabled">Enable tooltip</div>
+              <div class="setting-desc" id="desc-tooltip-enabled"></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="opt-tooltip-enabled" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-tooltip-display">Dimensions Shown</div>
+            </div>
+            <select class="select" id="opt-tooltip-display"></select>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-tooltip-position">Overlay Position</div>
+            </div>
+            <div class="pos-grid" id="opt-tooltip-position">
+              <button type="button" class="pos-cell" data-pos="top-left"></button>
+              <button type="button" class="pos-cell" data-pos="top-right"></button>
+              <button type="button" class="pos-cell" data-pos="bottom-left"></button>
+              <button type="button" class="pos-cell" data-pos="bottom-right"></button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-tooltip-duration">Auto-hide Delay</div>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="opt-tooltip-duration" min="500" max="6000" step="250" />
+              <span class="range-val" id="val-tooltip-duration">2.0s</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: General & Shortcuts -->
+      <section class="panel" id="panel-general">
+        <header class="panel-header">
+          <div>
+            <h1 id="heading-general">General & Shortcuts</h1>
+          </div>
+        </header>
+
+        <div class="card settings-list">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-close-popup">Auto-close popup</div>
+              <div class="setting-desc" id="desc-close-popup"></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="opt-close-popup" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-sync-enabled">Sync across devices</div>
+              <div class="setting-desc" id="desc-sync-enabled"></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="opt-sync-enabled" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-page-shortcuts">In-page shortcuts</div>
+              <div class="setting-desc" id="desc-page-shortcuts"></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="opt-page-shortcuts" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-language">Language</div>
+            </div>
+            <select class="select" id="opt-language"></select>
+          </div>
+        </div>
+
+        <div class="card info-card">
+          <h2 id="lbl-global-shortcuts">Global Browser Shortcuts</h2>
+          <p class="setting-desc" id="desc-global-shortcuts"></p>
+          <div class="shortcut-url-row">
+            <code class="url-code" id="shortcuts-url">chrome://extensions/shortcuts</code>
+            <button type="button" class="btn-secondary" id="btn-copy-url">Copy</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 4: Backup -->
+      <section class="panel" id="panel-backup">
+        <header class="panel-header">
+          <div>
+            <h1 id="heading-backup">Import & Export</h1>
+          </div>
+        </header>
+
+        <div class="card backup-card">
+          <h2 id="lbl-export-title">Export JSON</h2>
+          <p class="setting-desc" id="desc-export"></p>
+          <div>
+            <button type="button" class="btn-primary" id="btn-export">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="card backup-card">
+          <h2 id="lbl-import-title">Import JSON</h2>
+          <p class="setting-desc" id="desc-import"></p>
+          <div class="import-controls">
+            <label class="radio-pill">
+              <input type="radio" name="import-mode" value="replace" checked />
+              <span id="lbl-import-replace">Replace</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="import-mode" value="merge" />
+              <span id="lbl-import-merge">Merge</span>
+            </label>
+          </div>
+          <div>
+            <input type="file" id="file-import" accept=".json,application/json" hidden />
+            <button type="button" class="btn-secondary" id="btn-import">Choose JSON File</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Preset Modal -->
+  <div class="modal-backdrop hidden" id="preset-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 id="modal-title">Add Preset</h2>
+      </div>
+      <form class="modal-form" id="preset-form" novalidate>
+        <div class="field">
+          <label for="f-title" id="lbl-f-title">Label</label>
+          <input type="text" id="f-title" class="input" required maxlength="60" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-width" id="lbl-f-width">Width (px)</label>
+            <input type="number" id="f-width" class="input" min="200" max="9999" />
+          </div>
+          <div class="field">
+            <label for="f-height" id="lbl-f-height">Height (px)</label>
+            <input type="number" id="f-height" class="input" min="200" max="9999" />
+          </div>
+        </div>
+        <p class="field-hint" id="lbl-f-blank-hint"></p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-target" id="lbl-f-target">Target</label>
+            <select id="f-target" class="select full"></select>
+          </div>
+          <div class="field">
+            <label for="f-alignment" id="lbl-f-alignment">Position</label>
+            <select id="f-alignment" class="select full"></select>
+          </div>
+        </div>
+
+        <div class="field-row hidden" id="custom-pos-fields">
+          <div class="field">
+            <label for="f-left" id="lbl-f-left">Left</label>
+            <input type="number" id="f-left" class="input" min="-9999" max="9999" />
+          </div>
+          <div class="field">
+            <label for="f-top" id="lbl-f-top">Top</label>
+            <input type="number" id="f-top" class="input" min="-9999" max="9999" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label id="lbl-f-icon">Device Icon</label>
+          <div class="icon-picker" id="icon-picker"></div>
+        </div>
+
+        <div class="field">
+          <label for="f-shortcut" id="lbl-f-shortcut">Shortcut</label>
+          <div class="shortcut-input-row">
+            <input type="text" id="f-shortcut" class="input" readonly />
+            <button type="button" class="btn-secondary" id="btn-clear-shortcut">Clear</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancel</button>
+          <button type="submit" class="btn-primary" id="btn-save-modal">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="index.js"></script>
+</body>
+</html>
