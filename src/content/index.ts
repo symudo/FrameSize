@@ -5,8 +5,10 @@ import { loadAppData, STORAGE_KEYS } from '../shared/storage';
 import type { Preset, RuntimeMessage, ScreenWorkArea, Settings, ViewportMetrics } from '../shared/types';
 import { FloatingDevToolsBar } from './devtoolsBar';
 
-// 仅在顶层窗口运行，避免在 iframe 中重复渲染 Tooltip 或重复响应快捷键
-if (window === window.top) {
+// 仅在顶层窗口运行且防止扩展升级自动补注时重复初始化
+const winGuard = window as unknown as { __framesizeContentLoaded?: boolean };
+if (window === window.top && !winGuard.__framesizeContentLoaded) {
+  winGuard.__framesizeContentLoaded = true;
   let settings: Settings = { ...DEFAULT_SETTINGS };
   let presets: Preset[] = [];
   let hostEl: HTMLDivElement | null = null;
@@ -47,6 +49,8 @@ if (window === window.top) {
     if (tooltipEl && hostEl && document.documentElement.contains(hostEl)) {
       return tooltipEl;
     }
+
+    document.getElementById('framesize-tooltip-host')?.remove();
 
     hostEl = document.createElement('div');
     hostEl.id = 'framesize-tooltip-host';

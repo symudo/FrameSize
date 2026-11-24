@@ -7,6 +7,7 @@ import (
 	"math"
 	"path/filepath"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -202,6 +203,13 @@ func setWindowPinned(hwnd uintptr, pin bool) error {
 func setWindowCollapsed(hwnd uintptr, collapse bool) error {
 	if collapse {
 		procShowWindow.Call(hwnd, swMinimize)
+		// 跨进程调用 ShowWindow 是异步投递，短暂等待 Iconic 状态落定（最多 150ms）
+		for i := 0; i < 10; i++ {
+			if isWindowCollapsed(hwnd) {
+				break
+			}
+			time.Sleep(15 * time.Millisecond)
+		}
 		return nil
 	}
 
@@ -209,6 +217,12 @@ func setWindowCollapsed(hwnd uintptr, collapse bool) error {
 	procShowWindow.Call(hwnd, swShowNoActivate)
 	if isWindowCollapsed(hwnd) {
 		procShowWindow.Call(hwnd, swRestore)
+	}
+	for i := 0; i < 10; i++ {
+		if !isWindowCollapsed(hwnd) {
+			break
+		}
+		time.Sleep(15 * time.Millisecond)
 	}
 	if wasPinned {
 		_ = setWindowPinned(hwnd, true)

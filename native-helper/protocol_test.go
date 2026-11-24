@@ -45,6 +45,8 @@ func TestIsDevToolsTitle(t *testing.T) {
 	}{
 		{"DevTools - http://localhost:5173/", true},
 		{"开发者工具 - http://localhost:3000", true},
+		{"开发人员工具 - http://localhost:5173", true},
+		{"開發者工具 - Example", true},
 		{"Developer Tools - Example", true},
 		{"Web Developer Tools", true},
 		{"Google Chrome", false},

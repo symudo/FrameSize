@@ -2,6 +2,14 @@
 
 All notable changes to **FrameSize** are documented in this file.
 
+## [1.4.1] - 2026-11-24
+
+### Fixed
+- **修复 Microsoft Edge 简体中文版独立 DevTools 收起后悬浮展开按钮消失的致命 Bug**：Edge 简体中文的 F12 窗口标题为「`开发人员工具`」（此前仅收录了「开发者工具」与繁体「開發人員工具」），导致收起最小化后 Native Helper 找不到窗口并隐藏了悬浮展开按钮；现已补全简繁中/英/日/韩全部 DevTools 窗口标题关键词。
+- **修复跨进程 Win32 `ShowWindow` 异步状态延迟**：在 Native Helper 收起与展开窗口后增加最多 150ms 的 `IsIconic` 状态落定等待，确保返回给插件的 `collapsed` 状态准确反映系统真实状态，悬浮按钮即时切换为 **`[ >_ 展开 DevTools ]`**。
+- **修复升级扩展后旧标签页未刷新导致看不见悬浮按钮的问题**：新增 `scripting` 按需自动补注机制与幂等注入守卫，升级/重载扩展后无需手动按 F5 刷新已打开的网页即可立即显示悬浮按钮。
+- 加固悬浮栏宿主容器样式（显式 `display: block; inset: 0; pointer-events: none;` 与内层 `pointer-events: auto;`），确保在各类网页样式环境下稳定渲染与可点击。
+
 ## [1.4.0] - 2026-11-24
 
 ### Added

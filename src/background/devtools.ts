@@ -115,17 +115,33 @@ export function scheduleDevToolsBroadcast(delayMs = 220): void {
   }, delayMs);
 }
 
+function isInjectableUrl(url?: string): boolean {
+  return typeof url === 'string' && /^https?:\/\//i.test(url);
+}
+
 export async function broadcastDevToolsState(state: DevToolsState): Promise<void> {
   try {
     const tabs = await ext.tabs.query({ active: true });
+    const msg: RuntimeMessage = { type: 'DEVTOOLS_STATE_UPDATED', state };
     for (const tab of tabs) {
       if (tab.id === undefined) continue;
-      ext.tabs
-        .sendMessage(tab.id, {
-          type: 'DEVTOOLS_STATE_UPDATED',
-          state,
-        } satisfies RuntimeMessage)
-        .catch(() => {});
+      try {
+        await ext.tabs.sendMessage(tab.id, msg);
+      } catch {
+        // 扩展刚更新/重载时旧标签页尚未注入新版 content.js，自动补注后再发送一次（无需用户手动 F5）
+        if (state.hasDevTools && isInjectableUrl(tab.url) && ext.scripting?.executeScript) {
+          try {
+            await ext.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ['content.js'],
+            });
+            await sleep(40);
+            await ext.tabs.sendMessage(tab.id, msg);
+          } catch {
+            // 受限页或扩展商店页静默跳过
+          }
+        }
+      }
     }
   } catch {
     // ignore

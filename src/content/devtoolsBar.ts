@@ -114,10 +114,16 @@ export class FloatingDevToolsBar {
       return;
     }
 
+    // 清理上一版本扩展热重载后可能遗留在页面 DOM 上的旧宿主元素
+    document.getElementById('framesize-devtools-bar-host')?.remove();
+
     this.host = document.createElement('div');
     this.host.id = 'framesize-devtools-bar-host';
     this.host.style.all = 'initial';
+    this.host.style.display = 'block';
     this.host.style.position = 'fixed';
+    this.host.style.inset = '0';
+    this.host.style.pointerEvents = 'none';
     this.host.style.zIndex = '2147483646';
 
     const shadow = this.host.attachShadow({ mode: 'open' });
@@ -126,6 +132,7 @@ export class FloatingDevToolsBar {
       .fs-dt-bar {
         position: fixed;
         display: none;
+        pointer-events: auto;
         align-items: center;
         gap: 3px;
         padding: 4px 5px;
