@@ -3,7 +3,7 @@
     "message": "FrameSize"
   },
   "extDescription": {
-    "message": "Precision browser window and viewport resizer with presets, live tooltip, shortcuts, and sync."
+    "message": "Precision browser window & viewport resizer with undocked DevTools pin, roll-up, and split-screen controls."
   },
   "cmdOpenPopup": {
     "message": "Open FrameSize popup"
@@ -13,6 +13,15 @@
   },
   "cmdUndo": {
     "message": "Restore previous window size"
+  },
+  "cmdDevToolsPin": {
+    "message": "Toggle Always-on-Top for undocked DevTools"
+  },
+  "cmdDevToolsRollup": {
+    "message": "Toggle Roll-up / Collapse for undocked DevTools"
+  },
+  "cmdDevToolsSplit": {
+    "message": "Split screen: browser + undocked DevTools"
   },
   "cmdPreset1": {
     "message": "Apply preset #1"

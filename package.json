@@ -1,6 +1,6 @@
 {
   "name": "framesize-extension",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "FrameSize — 现代简约的跨浏览器窗口与视口尺寸调节插件（兼容 Chrome / Edge / Firefox）",
   "type": "module",

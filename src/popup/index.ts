@@ -4,6 +4,7 @@ import { createDeviceIcon, createUiIcon, setIconContent } from '../shared/icons'
 import { loadAppData, savePresets } from '../shared/storage';
 import type {
   CurrentDimensions,
+  DevToolsState,
   Preset,
   ResizeTarget,
   RuntimeMessage,
@@ -14,6 +15,7 @@ import type {
 let presets: Preset[] = [];
 let settings!: Settings;
 let currentDims: CurrentDimensions | null = null;
+let devToolsState: DevToolsState | null = null;
 let customTarget: ResizeTarget = 'viewport';
 let t: (key: I18nKey) => string = createTranslator('auto');
 let toastTimer: number | null = null;
@@ -254,6 +256,52 @@ function applyStaticLabels(): void {
   $<HTMLSpanElement>('lbl-w').textContent = t('width');
   $<HTMLSpanElement>('lbl-h').textContent = t('height');
   $<HTMLButtonElement>('btn-apply').textContent = t('apply');
+
+  // DevTools card static icons & labels
+  setIconContent($<HTMLSpanElement>('devtools-icon'), createUiIcon('terminal'));
+  $<HTMLSpanElement>('lbl-devtools').textContent = 'DevTools';
+
+  const btnSplitR = $<HTMLButtonElement>('btn-dt-split-r');
+  setIconContent(btnSplitR, createUiIcon('splitRight'));
+  btnSplitR.title = t('devtoolsSplitRightTitle');
+
+  const btnSplitB = $<HTMLButtonElement>('btn-dt-split-b');
+  setIconContent(btnSplitB, createUiIcon('splitBottom'));
+  btnSplitB.title = t('devtoolsSplitBottomTitle');
+}
+
+function setPillContent(btn: HTMLButtonElement, icon: SVGSVGElement, label: string): void {
+  const span = document.createElement('span');
+  span.textContent = label;
+  btn.replaceChildren(icon, span);
+}
+
+function updateDevToolsUI(state: DevToolsState): void {
+  devToolsState = state;
+  const card = $<HTMLElement>('devtools-card');
+  card.classList.toggle('hidden', !state.hasDevTools);
+  if (!state.hasDevTools) return;
+
+  const dot = $<HTMLSpanElement>('helper-dot');
+  dot.classList.toggle('online', state.helperConnected);
+  dot.title = state.helperConnected
+    ? `${t('helperConnected')} ${state.helperVersion ? `v${state.helperVersion}` : ''}`.trim()
+    : t('helperDisconnected');
+
+  const pinBtn = $<HTMLButtonElement>('btn-dt-pin');
+  pinBtn.classList.toggle('active', state.pinned);
+  pinBtn.title = t('devtoolsPinTitle');
+  setPillContent(pinBtn, createUiIcon('pin'), state.pinned ? t('devtoolsPinned') : t('devtoolsPin'));
+
+  const rollupBtn = $<HTMLButtonElement>('btn-dt-rollup');
+  const isCollapsed = state.rolledUp || state.minimized;
+  rollupBtn.classList.toggle('active', isCollapsed);
+  rollupBtn.title = state.helperConnected ? t('devtoolsRollupTitle') : t('devtoolsMinimizeTitle');
+  setPillContent(
+    rollupBtn,
+    createUiIcon(isCollapsed ? 'expand' : 'rollup'),
+    isCollapsed ? t('devtoolsRolledUp') : t('devtoolsRollup')
+  );
 }
 
 function bindEvents(): void {
@@ -361,6 +409,80 @@ function bindEvents(): void {
     }
     await saveNewPreset(parsed.w, parsed.h, customTarget);
   });
+
+  // DevTools Companion controls
+  const openDevToolsOptions = () => {
+    const url = ext.runtime.getURL('options/index.html#devtools');
+    void ext.tabs.create({ url });
+  };
+
+  $<HTMLButtonElement>('btn-dt-pin').addEventListener('click', async () => {
+    try {
+      const res = await sendBg<{ state: DevToolsState; changed: boolean; needsHelper: boolean }>({
+        type: 'TOGGLE_DEVTOOLS_PIN',
+      });
+      updateDevToolsUI(res.state);
+      if (res.needsHelper) {
+        showToast(t('devtoolsHelperNeeded'));
+        openDevToolsOptions();
+      } else if (res.changed) {
+        showToast(res.state.pinned ? t('devtoolsPinnedToast') : t('devtoolsUnpinnedToast'));
+      } else {
+        showToast(t('devtoolsNotFound'));
+      }
+    } catch {
+      showToast(t('devtoolsHelperNeeded'));
+      openDevToolsOptions();
+    }
+  });
+
+  $<HTMLButtonElement>('btn-dt-rollup').addEventListener('click', async () => {
+    try {
+      const res = await sendBg<{
+        state: DevToolsState;
+        mode: 'rollup' | 'minimize' | 'none';
+        collapsed: boolean;
+      }>({
+        type: 'TOGGLE_DEVTOOLS_ROLLUP',
+      });
+      updateDevToolsUI(res.state);
+      if (res.mode === 'rollup') {
+        showToast(res.collapsed ? t('devtoolsRolledToast') : t('devtoolsExpandedToast'));
+      } else if (res.mode === 'minimize') {
+        showToast(res.collapsed ? t('devtoolsMinimizedToast') : t('devtoolsRestoredToast'));
+      } else {
+        showToast(t('devtoolsNotFound'));
+      }
+    } catch {
+      // ignore
+    }
+  });
+
+  const handleSplit = async (direction: 'right' | 'bottom') => {
+    try {
+      const res = await sendBg<{ applied: boolean; state: DevToolsState }>({
+        type: 'SPLIT_DEVTOOLS',
+        direction,
+        screen: getPopupScreenWorkArea(),
+      });
+      updateDevToolsUI(res.state);
+      if (res.applied) {
+        showToast(t('devtoolsSplitToast'));
+        const dims = await sendBg<CurrentDimensions>({
+          type: 'GET_CURRENT_DIMENSIONS',
+          screen: getPopupScreenWorkArea(),
+        });
+        updateMetricsUI(dims);
+      } else {
+        showToast(t('devtoolsNotFound'));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  $<HTMLButtonElement>('btn-dt-split-r').addEventListener('click', () => void handleSplit('right'));
+  $<HTMLButtonElement>('btn-dt-split-b').addEventListener('click', () => void handleSplit('bottom'));
 }
 
 async function init(): Promise<void> {
@@ -373,14 +495,21 @@ async function init(): Promise<void> {
   bindEvents();
   renderPresets();
 
-  try {
-    const dims = await sendBg<CurrentDimensions>({
+  const [dimsRes, dtRes] = await Promise.allSettled([
+    sendBg<CurrentDimensions>({
       type: 'GET_CURRENT_DIMENSIONS',
       screen: getPopupScreenWorkArea(),
-    });
-    updateMetricsUI(dims);
-  } catch {
-    // ignore
+    }),
+    sendBg<DevToolsState>({ type: 'GET_DEVTOOLS_STATE' }),
+  ]);
+
+  if (dimsRes.status === 'fulfilled') {
+    updateMetricsUI(dimsRes.value);
+  }
+  if (dtRes.status === 'fulfilled') {
+    updateDevToolsUI(dtRes.value);
+  } else if (devToolsState) {
+    updateDevToolsUI(devToolsState);
   }
 }
 

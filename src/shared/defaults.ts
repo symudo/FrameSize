@@ -84,6 +84,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tooltipDisplay: 'both',
   enablePageShortcuts: true,
   language: 'auto',
+  devtoolsRollupHeight: 40,
+  devtoolsSplitRatio: 0.62,
 };
 
 export const DEFAULT_OVERHEAD = {

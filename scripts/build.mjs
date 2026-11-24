@@ -37,7 +37,9 @@ function copyStaticAssets(targetDir) {
 }
 
 function writeManifests() {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
   const base = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.base.json'), 'utf8'));
+  base.version = pkg.version;
 
   const chromiumManifest = {
     ...base,

@@ -52,7 +52,14 @@ export type UiIconName =
   | 'popOut'
   | 'grip'
   | 'edit'
-  | 'trash';
+  | 'trash'
+  | 'pin'
+  | 'rollup'
+  | 'expand'
+  | 'splitRight'
+  | 'splitBottom'
+  | 'minimize'
+  | 'terminal';
 
 const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
   logo: {
@@ -140,6 +147,49 @@ const UI_ICON_DEFS: Record<UiIconName, IconDef> = {
       { tag: 'path', attrs: { d: 'M10 11v6' } },
       { tag: 'path', attrs: { d: 'M14 11v6' } },
       { tag: 'path', attrs: { d: 'M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' } },
+    ],
+  },
+  pin: {
+    shapes: [
+      { tag: 'line', attrs: { x1: '12', y1: '17', x2: '12', y2: '22' } },
+      { tag: 'path', attrs: { d: 'M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z' } },
+    ],
+  },
+  rollup: {
+    shapes: [
+      { tag: 'rect', attrs: { x: '3', y: '4', width: '18', height: '5', rx: '1.5' } },
+      { tag: 'polyline', attrs: { points: '8 16 12 12 16 16' } },
+      { tag: 'line', attrs: { x1: '12', y1: '12', x2: '12', y2: '20' } },
+    ],
+  },
+  expand: {
+    shapes: [
+      { tag: 'rect', attrs: { x: '3', y: '4', width: '18', height: '5', rx: '1.5' } },
+      { tag: 'polyline', attrs: { points: '8 16 12 20 16 16' } },
+      { tag: 'line', attrs: { x1: '12', y1: '12', x2: '12', y2: '20' } },
+    ],
+  },
+  splitRight: {
+    shapes: [
+      { tag: 'rect', attrs: { x: '3', y: '4', width: '18', height: '16', rx: '2' } },
+      { tag: 'line', attrs: { x1: '14', y1: '4', x2: '14', y2: '20' } },
+    ],
+  },
+  splitBottom: {
+    shapes: [
+      { tag: 'rect', attrs: { x: '3', y: '4', width: '18', height: '16', rx: '2' } },
+      { tag: 'line', attrs: { x1: '3', y1: '14', x2: '21', y2: '14' } },
+    ],
+  },
+  minimize: {
+    shapes: [
+      { tag: 'line', attrs: { x1: '5', y1: '18', x2: '19', y2: '18' } },
+    ],
+  },
+  terminal: {
+    shapes: [
+      { tag: 'polyline', attrs: { points: '4 17 10 11 4 5' } },
+      { tag: 'line', attrs: { x1: '12', y1: '19', x2: '20', y2: '19' } },
     ],
   },
 };

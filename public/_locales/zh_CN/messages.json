@@ -3,7 +3,7 @@
     "message": "FrameSize"
   },
   "extDescription": {
-    "message": "轻松调整浏览器窗口与网页视口尺寸，支持自定义预设、实时悬浮提示、快捷键与跨设备同步。"
+    "message": "轻松调整浏览器窗口与视口尺寸，并支持独立 DevTools 窗口置顶、卷帘折叠与防遮挡分屏。"
   },
   "cmdOpenPopup": {
     "message": "打开 FrameSize 尺寸菜单"
@@ -13,6 +13,15 @@
   },
   "cmdUndo": {
     "message": "恢复上一次窗口尺寸"
+  },
+  "cmdDevToolsPin": {
+    "message": "置顶 / 取消置顶独立 DevTools 窗口"
+  },
+  "cmdDevToolsRollup": {
+    "message": "卷帘折叠 / 展开独立 DevTools 窗口"
+  },
+  "cmdDevToolsSplit": {
+    "message": "网页与独立 DevTools 一键防遮挡分屏"
   },
   "cmdPreset1": {
     "message": "应用第 1 个预设"

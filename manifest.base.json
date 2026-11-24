@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "FrameSize",
   "description": "__MSG_extDescription__",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "default_locale": "en",
   "icons": {
     "16": "icons/icon-16.png",
@@ -26,7 +26,8 @@
   },
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "nativeMessaging"
   ],
   "content_scripts": [
     {
@@ -50,6 +51,21 @@
         "default": "Alt+Shift+Z"
       },
       "description": "__MSG_cmdUndo__"
+    },
+    "toggle-devtools-pin": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "__MSG_cmdDevToolsPin__"
+    },
+    "toggle-devtools-rollup": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "__MSG_cmdDevToolsRollup__"
+    },
+    "split-devtools": {
+      "description": "__MSG_cmdDevToolsSplit__"
     },
     "apply-preset-1": {
       "description": "__MSG_cmdPreset1__"

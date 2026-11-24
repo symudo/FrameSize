@@ -125,6 +125,18 @@ export function sanitizeSettings(raw: unknown): Settings {
         ? obj.enablePageShortcuts
         : DEFAULT_SETTINGS.enablePageShortcuts,
     language: lang === 'auto' || lang === 'zh' || lang === 'en' ? lang : DEFAULT_SETTINGS.language,
+    devtoolsRollupHeight:
+      Number.isFinite(Number(obj.devtoolsRollupHeight)) &&
+      Number(obj.devtoolsRollupHeight) >= 28 &&
+      Number(obj.devtoolsRollupHeight) <= 64
+        ? Math.round(Number(obj.devtoolsRollupHeight))
+        : DEFAULT_SETTINGS.devtoolsRollupHeight,
+    devtoolsSplitRatio:
+      Number.isFinite(Number(obj.devtoolsSplitRatio)) &&
+      Number(obj.devtoolsSplitRatio) >= 0.35 &&
+      Number(obj.devtoolsSplitRatio) <= 0.8
+        ? Number(Number(obj.devtoolsSplitRatio).toFixed(2))
+        : DEFAULT_SETTINGS.devtoolsSplitRatio,
   };
 }
 

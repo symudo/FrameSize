@@ -13,12 +13,13 @@
         <span class="brand-icon" id="brand-icon"></span>
         <div>
           <div class="brand-name">FrameSize</div>
-          <div class="brand-ver">v1.0.0</div>
+          <div class="brand-ver">v1.1.0</div>
         </div>
       </div>
 
       <nav class="nav" id="nav">
         <button type="button" class="nav-item active" data-tab="presets" id="nav-presets">Presets</button>
+        <button type="button" class="nav-item" data-tab="devtools" id="nav-devtools">DevTools</button>
         <button type="button" class="nav-item" data-tab="tooltip" id="nav-tooltip">Tooltip</button>
         <button type="button" class="nav-item" data-tab="general" id="nav-general">General</button>
         <button type="button" class="nav-item" data-tab="backup" id="nav-backup">Backup</button>
@@ -40,6 +41,62 @@
         </header>
 
         <ul class="preset-table" id="preset-table"></ul>
+      </section>
+
+      <!-- Tab 1b: DevTools Helper -->
+      <section class="panel" id="panel-devtools">
+        <header class="panel-header">
+          <div>
+            <h1 id="heading-devtools">DevTools Helper</h1>
+          </div>
+          <div class="header-btns">
+            <button type="button" class="btn-secondary" id="btn-recheck-helper">Recheck</button>
+          </div>
+        </header>
+
+        <div class="card settings-list">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-helper-status">Native Helper Status</div>
+              <div class="setting-desc" id="val-helper-status">--</div>
+            </div>
+            <span class="status-pill" id="pill-helper-status"></span>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-rollup-height">Rolled-up Title Bar Height</div>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="opt-rollup-height" min="28" max="64" step="2" />
+              <span class="range-val" id="val-rollup-height">40 px</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title" id="lbl-split-ratio">Main Browser Ratio in Split Mode</div>
+            </div>
+            <div class="range-wrap">
+              <input type="range" id="opt-split-ratio" min="40" max="75" step="1" />
+              <span class="range-val" id="val-split-ratio">62%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card info-card">
+          <h2 id="lbl-helper-install-title">Unlock OS-level Always-on-Top</h2>
+          <p class="setting-desc" id="desc-helper-install"></p>
+          <div class="meta-line">
+            <span class="meta-key" id="lbl-ext-id">Extension ID</span>
+            <code class="inline-code" id="val-ext-id"></code>
+          </div>
+          <div class="meta-key" id="lbl-helper-cmd">Install Command</div>
+          <div class="shortcut-url-row">
+            <code class="url-code" id="helper-install-cmd"></code>
+            <button type="button" class="btn-secondary" id="btn-copy-cmd">Copy</button>
+          </div>
+        </div>
       </section>
 
       <!-- Tab 2: Tooltip -->

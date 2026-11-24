@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeFrameOverhead,
+  computeSplitLayout,
   computeTargetWindowSize,
   computeWindowPosition,
   normalizeShortcutFromEvent,
@@ -115,5 +116,24 @@ describe('geometry', () => {
         code: 'KeyK',
       })
     ).toBe('Ctrl+Shift+K');
+  });
+
+  it('computes non-overlapping split layouts for browser + DevTools', () => {
+    const area = { availLeft: 0, availTop: 0, availWidth: 1920, availHeight: 1040 };
+    const rightSplit = computeSplitLayout(area, 'right', 0.62);
+    expect(rightSplit.main).toEqual({ left: 0, top: 0, width: 1190, height: 1040 });
+    expect(rightSplit.devtools).toEqual({ left: 1190, top: 0, width: 730, height: 1040 });
+    expect(rightSplit.main.width + rightSplit.devtools.width).toBe(1920);
+
+    const bottomSplit = computeSplitLayout(area, 'bottom', 0.6);
+    expect(bottomSplit.main).toEqual({ left: 0, top: 0, width: 1920, height: 624 });
+    expect(bottomSplit.devtools).toEqual({ left: 0, top: 624, width: 1920, height: 416 });
+
+    // 多显示器负偏移 + 极端比例钳制
+    const leftScreen = { availLeft: -1920, availTop: 0, availWidth: 1920, availHeight: 1080 };
+    const clamped = computeSplitLayout(leftScreen, 'right', 0.99);
+    expect(clamped.main.left).toBe(-1920);
+    expect(clamped.main.width).toBe(Math.round(1920 * 0.8));
+    expect(clamped.devtools.left).toBe(-1920 + clamped.main.width);
   });
 });

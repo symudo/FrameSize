@@ -1,5 +1,5 @@
 import { DEFAULT_PRESETS } from '../shared/defaults';
-import { getShortcutsPageUrl } from '../shared/ext';
+import { ext, getShortcutsPageUrl, isFirefox } from '../shared/ext';
 import { normalizeShortcutFromEvent } from '../shared/geometry';
 import { createTranslator, type I18nKey } from '../shared/i18n';
 import { createDeviceIcon, createUiIcon, setIconContent } from '../shared/icons';
@@ -12,9 +12,11 @@ import {
 } from '../shared/storage';
 import type {
   DeviceType,
+  DevToolsState,
   LanguageSetting,
   Preset,
   ResizeTarget,
+  RuntimeMessage,
   Settings,
   TooltipDisplayMode,
   TooltipPosition,
@@ -28,6 +30,7 @@ let editingPresetId: string | null = null;
 let selectedIcon: DeviceType = 'desktop';
 let dragSourceId: string | null = null;
 let toastTimer: number | null = null;
+let lastHelperState: DevToolsState | null = null;
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -80,6 +83,7 @@ function renderI18n(): void {
   setIconContent($<HTMLSpanElement>('brand-icon'), createUiIcon('logo'));
 
   $<HTMLButtonElement>('nav-presets').textContent = t('navPresets');
+  $<HTMLButtonElement>('nav-devtools').textContent = t('navDevtools');
   $<HTMLButtonElement>('nav-tooltip').textContent = t('navTooltip');
   $<HTMLButtonElement>('nav-general').textContent = t('navGeneral');
   $<HTMLButtonElement>('nav-backup').textContent = t('navBackup');
@@ -88,6 +92,25 @@ function renderI18n(): void {
   $<HTMLParagraphElement>('subtitle-drag').textContent = t('dragToReorder');
   $<HTMLButtonElement>('btn-reset-defaults').textContent = t('resetDefaults');
   $<HTMLButtonElement>('btn-add-preset').textContent = `+ ${t('addPreset')}`;
+
+  // DevTools section
+  $<HTMLHeadingElement>('heading-devtools').textContent = t('devtoolsSectionTitle');
+  $<HTMLButtonElement>('btn-recheck-helper').textContent = t('helperRefresh');
+  $<HTMLDivElement>('lbl-helper-status').textContent = t('helperStatusLabel');
+  $<HTMLDivElement>('lbl-rollup-height').textContent = t('rollupHeightLabel');
+  $<HTMLDivElement>('lbl-split-ratio').textContent = t('splitRatioLabel');
+  $<HTMLHeadingElement>('lbl-helper-install-title').textContent = t('helperInstallTitle');
+  $<HTMLParagraphElement>('desc-helper-install').textContent = t('helperInstallDesc');
+  $<HTMLSpanElement>('lbl-ext-id').textContent = t('helperExtIdLabel');
+  $<HTMLDivElement>('lbl-helper-cmd').textContent = t('helperCmdLabel');
+  $<HTMLButtonElement>('btn-copy-cmd').textContent = t('copyCmd');
+
+  const extId = ext.runtime?.id ?? '';
+  $<HTMLElement>('val-ext-id').textContent = extId || '(unknown)';
+  $<HTMLElement>('helper-install-cmd').textContent = isFirefox
+    ? '.\\install.ps1'
+    : `.\\install.ps1 -ExtensionId ${extId}`;
+  renderHelperStatus();
 
   // Tooltip section
   $<HTMLHeadingElement>('heading-tooltip').textContent = t('tooltipSectionTitle');
@@ -222,7 +245,40 @@ function renderIconPicker(): void {
   }
 }
 
+function renderHelperStatus(): void {
+  const pill = $<HTMLSpanElement>('pill-helper-status');
+  const desc = $<HTMLDivElement>('val-helper-status');
+  const connected = Boolean(lastHelperState?.helperConnected);
+  pill.classList.toggle('online', connected);
+  pill.textContent = connected
+    ? `${t('helperConnected')}${lastHelperState?.helperVersion ? ` v${lastHelperState.helperVersion}` : ''}`
+    : t('helperDisconnected');
+  desc.textContent = connected
+    ? (lastHelperState?.hasDevTools ? (lastHelperState.title ?? 'DevTools Ready') : 'dev.framesize.helper')
+    : 'dev.framesize.helper';
+}
+
+async function checkHelperConnection(): Promise<void> {
+  try {
+    const res = (await ext.runtime.sendMessage({
+      type: 'GET_DEVTOOLS_STATE',
+    } satisfies RuntimeMessage)) as { ok: boolean; data?: DevToolsState };
+    if (res?.ok && res.data) {
+      lastHelperState = res.data;
+    }
+  } catch {
+    lastHelperState = null;
+  }
+  renderHelperStatus();
+}
+
 function syncSettingsControls(): void {
+  $<HTMLInputElement>('opt-rollup-height').value = String(settings.devtoolsRollupHeight);
+  $<HTMLSpanElement>('val-rollup-height').textContent = `${settings.devtoolsRollupHeight} px`;
+  const splitPct = Math.round(settings.devtoolsSplitRatio * 100);
+  $<HTMLInputElement>('opt-split-ratio').value = String(splitPct);
+  $<HTMLSpanElement>('val-split-ratio').textContent = `${splitPct}%`;
+
   $<HTMLInputElement>('opt-tooltip-enabled').checked = settings.tooltipEnabled;
   $<HTMLSelectElement>('opt-tooltip-display').value = settings.tooltipDisplay;
   $<HTMLInputElement>('opt-tooltip-duration').value = String(settings.tooltipDuration);
@@ -399,16 +455,24 @@ function closePresetModal(): void {
   editingPresetId = null;
 }
 
+function activateTab(tabName: string): void {
+  const validTab = document.querySelector<HTMLButtonElement>(`.nav-item[data-tab="${tabName}"]`);
+  if (!validTab) return;
+  for (const b of document.querySelectorAll<HTMLButtonElement>('.nav-item')) {
+    b.classList.toggle('active', b === validTab);
+  }
+  for (const p of document.querySelectorAll<HTMLElement>('.panel')) {
+    p.classList.toggle('active', p.id === `panel-${tabName}`);
+  }
+}
+
 function bindEvents(): void {
   // Tabs
   for (const btn of document.querySelectorAll<HTMLButtonElement>('.nav-item')) {
     btn.addEventListener('click', () => {
       const targetTab = btn.dataset.tab;
-      for (const b of document.querySelectorAll<HTMLButtonElement>('.nav-item')) {
-        b.classList.toggle('active', b === btn);
-      }
-      for (const p of document.querySelectorAll<HTMLElement>('.panel')) {
-        p.classList.toggle('active', p.id === `panel-${targetTab}`);
+      if (targetTab) {
+        activateTab(targetTab);
       }
     });
   }
@@ -500,6 +564,40 @@ function bindEvents(): void {
     renderPresetTable();
     closePresetModal();
     showToast(t('settingsSaved'));
+  });
+
+  // DevTools helper settings
+  $<HTMLButtonElement>('btn-recheck-helper').addEventListener('click', async () => {
+    await checkHelperConnection();
+    showToast(lastHelperState?.helperConnected ? t('helperConnected') : t('helperDisconnected'));
+  });
+
+  $<HTMLInputElement>('opt-rollup-height').addEventListener('input', (ev) => {
+    const val = Number((ev.target as HTMLInputElement).value);
+    settings.devtoolsRollupHeight = val;
+    $<HTMLSpanElement>('val-rollup-height').textContent = `${val} px`;
+  });
+  $<HTMLInputElement>('opt-rollup-height').addEventListener('change', async () => {
+    await persistSettings();
+  });
+
+  $<HTMLInputElement>('opt-split-ratio').addEventListener('input', (ev) => {
+    const pct = Number((ev.target as HTMLInputElement).value);
+    settings.devtoolsSplitRatio = Number((pct / 100).toFixed(2));
+    $<HTMLSpanElement>('val-split-ratio').textContent = `${pct}%`;
+  });
+  $<HTMLInputElement>('opt-split-ratio').addEventListener('change', async () => {
+    await persistSettings();
+  });
+
+  $<HTMLButtonElement>('btn-copy-cmd').addEventListener('click', async () => {
+    const cmd = $<HTMLElement>('helper-install-cmd').textContent ?? '';
+    try {
+      await navigator.clipboard.writeText(cmd);
+      showToast(t('copied'));
+    } catch {
+      // ignore
+    }
   });
 
   // Tooltip settings
@@ -634,6 +732,11 @@ async function init(): Promise<void> {
   syncSettingsControls();
   renderPresetTable();
   bindEvents();
+  const initialHash = window.location.hash.replace(/^#/, '');
+  if (initialHash) {
+    activateTab(initialHash);
+  }
+  void checkHelperConnection();
 }
 
 void init();

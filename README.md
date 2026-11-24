@@ -1,13 +1,16 @@
 # FrameSize
 
-现代简约、零追踪的跨浏览器窗口与视口尺寸调节插件（兼容 **Chrome**、**Edge** 与 **Firefox**）。
+现代简约、零追踪的跨浏览器窗口与视口尺寸调节插件（兼容 **Chrome**、**Edge** 与 **Firefox**），内置 **独立 DevTools 窗口置顶、卷帘折叠与防遮挡分屏** 助手。
 
 ## 核心功能
-- **精准尺寸调节**：同时支持 `Viewport`（网页可视区，含高缩放与滚动条自动微调补偿）与 `Window`（整个浏览器外框）模式。
+- **精准尺寸调节**：同时支持 `Viewport`（网页可视区，含高缩放倍率与滚动条自动补偿）与 `Window`（整个浏览器外框）模式。
 - **自定义预设与拖拽排序**：内置主流 Mobile / Tablet / Laptop / Desktop 断点，支持自由增删改、单边留空、窗口对齐（居中/四角/自定义坐标）与拖拽排序。
-- **快捷操作**：一键横竖屏旋转、撤销恢复上一尺寸、最大化、捕获当前尺寸、独立无标签栏窗口打开（Pop-out）。
-- **实时悬浮提示（Resize Tooltip）**：基于 Shadow DOM 样式完全隔离，手动拖拽或插件调尺寸时在角落显示实时宽高，支持位置、时长与显示模式配置。
-- **双轨快捷键**：支持浏览器全局快捷键（旋转、撤销、前 4 个预设）以及任意预设的页面内自定义快捷键。
+- **快捷操作**：一键横竖屏旋转（`Alt+Shift+R`）、撤销恢复上一尺寸（`Alt+Shift+Z`）、最大化、捕获当前尺寸、独立无标签栏窗口打开（Pop-out）。
+- **独立 DevTools 窗口助手（v1.1 新增）**：
+  - **真·始终置顶（`Alt+Shift+P`）**：通过轻量 Windows Native Helper 调用 Win32 `HWND_TOPMOST`，置顶独立 F12 窗口且**点击网页不抢焦点**。
+  - **真·卷帘折叠（`Alt+Shift+F`）**：通过 Win32 `SetWindowRgn` 仅保留顶部标题栏可见（下方鼠标点击直接穿透到网页，零重排）；未安装伴侣时自动平滑降级为“最小化收起 ↔ 唤出”。
+  - **一键防遮挡智能分屏**：支持左右/上下紧贴排布主浏览器与独立 DevTools 窗口，互不覆盖。
+- **实时悬浮提示（Resize Tooltip）**：基于 Shadow DOM 样式完全隔离，支持位置、时长与显示内容配置。
 - **云同步与备份**：支持 `storage.sync` 跨设备同步，支持 JSON 一键导入/导出（覆盖或合并）。
 
 ## 开发与构建
@@ -21,13 +24,18 @@ npm run package
 
 构建完成后会生成：
 - `dist/chromium/` 与 `release/framesize-chromium-v*.zip` — 适用于 **Chrome** 与 **Microsoft Edge**
-- `dist/firefox/` 与 `release/framesize-firefox-v*.zip` — 适用于 **Firefox**（含 `browser_specific_settings.gecko` 与 `background.scripts`）
+- `dist/firefox/` 与 `release/framesize-firefox-v*.zip` — 适用于 **Firefox**
+- `dist/helper/` 与 `release/framesize-helper-windows-x64-v*.zip` — Windows 本地伴侣（含单文件 `framesize-helper.exe` 与免管理员权限注册脚本 `install.ps1` / `uninstall.ps1`）
+
+## 本地加载与伴侣注册
+1. **加载插件**：
+   - **Chrome**：`chrome://extensions/` → 开启开发者模式 → 加载 `dist/chromium`
+   - **Edge**：`edge://extensions/` → 开启开发人员模式 → 加载 `dist/chromium`
+   - **Firefox**：`about:debugging#/runtime/this-firefox` → 临时载入 `dist/firefox/manifest.json`
+2. **启用系统级 DevTools 置顶与卷帘折叠（Windows，可选）**：
+   - 从 Release 下载并解压 `framesize-helper-windows-x64-v*.zip`（或使用本地 `dist/helper`）。
+   - 打开 FrameSize 设置页 → **DevTools 助手** → 一键复制安装命令并在解压目录的 PowerShell 中执行即可（支持 Chrome / Edge / Firefox，无需管理员权限）。
 
 ## 云端构建（GitHub Actions）
-- **CI（`.github/workflows/ci.yml`）**：每次推送到 `main` 分支或提交 PR 时自动执行类型检查、单元测试并上传双端 `.zip` 产物。
-- **自动发布（`.github/workflows/release.yml`）**：推送 `v*` 标签（如 `v1.0.0`）或在 Actions 页面手动触发时，自动生成 GitHub Release 并附带 Chromium 与 Firefox 安装包。
-
-## 本地加载方式
-- **Chrome**：打开 `chrome://extensions/` → 开启「开发者模式」→ 点击「加载已解压的扩展程序」→ 选择 `dist/chromium`。
-- **Edge**：打开 `edge://extensions/` → 开启「开发人员模式」→ 点击「加载解压缩的扩展」→ 选择 `dist/chromium`。
-- **Firefox**：打开 `about:debugging#/runtime/this-firefox` → 点击「临时载入附加组件」→ 选择 `dist/firefox/manifest.json`。
+- **CI（`.github/workflows/ci.yml`）**：每次推送 `main` 或 PR 自动执行 TypeScript 类型检查、Vitest 单测、Go 单测，并交叉编译打包三端 `.zip` 产物。
+- **自动发布（`.github/workflows/release.yml`）**：推送 `v*` 标签或手动触发时自动生成 GitHub Release 并附带 Chromium、Firefox 与 Windows Native Helper 安装包。

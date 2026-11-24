@@ -178,3 +178,60 @@ export function normalizeShortcutString(raw?: string): string | undefined {
   if (cleaned.length < 2) return undefined;
   return cleaned.join('+');
 }
+
+export interface SplitLayoutResult {
+  main: { left: number; top: number; width: number; height: number };
+  devtools: { left: number; top: number; width: number; height: number };
+}
+
+/**
+ * 计算主浏览器窗口与独立 DevTools 窗口的防遮挡紧贴分屏布局。
+ * direction='right': 主窗口在左、DevTools 在右；
+ * direction='bottom': 主窗口在上、DevTools 在下。
+ */
+export function computeSplitLayout(
+  workArea: ScreenWorkArea,
+  direction: 'right' | 'bottom',
+  ratio = 0.62
+): SplitLayoutResult {
+  const safeRatio = Math.max(0.35, Math.min(0.8, Number.isFinite(ratio) ? ratio : 0.62));
+  const { availLeft, availTop, availWidth, availHeight } = workArea;
+
+  if (direction === 'bottom') {
+    const mainH = Math.max(MIN_WINDOW_SIZE, Math.round(availHeight * safeRatio));
+    const dtH = Math.max(MIN_WINDOW_SIZE, availHeight - mainH);
+    const adjustedMainH = Math.max(MIN_WINDOW_SIZE, availHeight - dtH);
+    return {
+      main: {
+        left: Math.round(availLeft),
+        top: Math.round(availTop),
+        width: Math.max(MIN_WINDOW_SIZE, Math.round(availWidth)),
+        height: adjustedMainH,
+      },
+      devtools: {
+        left: Math.round(availLeft),
+        top: Math.round(availTop + adjustedMainH),
+        width: Math.max(MIN_WINDOW_SIZE, Math.round(availWidth)),
+        height: dtH,
+      },
+    };
+  }
+
+  const mainW = Math.max(MIN_WINDOW_SIZE, Math.round(availWidth * safeRatio));
+  const dtW = Math.max(MIN_WINDOW_SIZE, availWidth - mainW);
+  const adjustedMainW = Math.max(MIN_WINDOW_SIZE, availWidth - dtW);
+  return {
+    main: {
+      left: Math.round(availLeft),
+      top: Math.round(availTop),
+      width: adjustedMainW,
+      height: Math.max(MIN_WINDOW_SIZE, Math.round(availHeight)),
+    },
+    devtools: {
+      left: Math.round(availLeft + adjustedMainW),
+      top: Math.round(availTop),
+      width: dtW,
+      height: Math.max(MIN_WINDOW_SIZE, Math.round(availHeight)),
+    },
+  };
+}

@@ -35,6 +35,21 @@ export interface Settings {
   tooltipDisplay: TooltipDisplayMode;
   enablePageShortcuts: boolean;
   language: LanguageSetting;
+  devtoolsRollupHeight: number; // logical px for Win32 title bar rollup
+  devtoolsSplitRatio: number; // 0.35 - 0.80 main browser width ratio
+}
+
+export type SplitDirection = 'right' | 'bottom';
+
+export interface DevToolsState {
+  hasDevTools: boolean;
+  windowId: number | null;
+  minimized: boolean;
+  helperConnected: boolean;
+  helperVersion: string | null;
+  pinned: boolean;
+  rolledUp: boolean;
+  title: string | null;
 }
 
 export interface ScreenWorkArea {
@@ -104,5 +119,10 @@ export type RuntimeMessage =
   | { type: 'ROTATE_WINDOW'; screen?: ScreenWorkArea }
   | { type: 'UNDO_RESIZE' }
   | { type: 'MAXIMIZE_WINDOW' }
+  | { type: 'GET_DEVTOOLS_STATE' }
+  | { type: 'TOGGLE_DEVTOOLS_PIN' }
+  | { type: 'TOGGLE_DEVTOOLS_ROLLUP' }
+  | { type: 'TOGGLE_DEVTOOLS_MINIMIZE' }
+  | { type: 'SPLIT_DEVTOOLS'; direction: SplitDirection; screen?: ScreenWorkArea }
   | { type: 'QUERY_PAGE_METRICS' }
   | { type: 'SHOW_TOOLTIP_HINT'; windowWidth?: number; windowHeight?: number };

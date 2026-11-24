@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
@@ -122,4 +123,33 @@ for (const target of targets) {
   createZipFromDir(target.dir, outPath);
   const sizeKb = (fs.statSync(outPath).size / 1024).toFixed(1);
   console.log(`Packaged ${path.basename(outPath)} (${sizeKb} KB)`);
+}
+
+// Build and package Windows Native Helper if Go toolchain is available
+const helperSrcDir = path.join(ROOT, 'native-helper');
+const helperDistDir = path.join(ROOT, 'dist', 'helper');
+if (fs.existsSync(path.join(helperSrcDir, 'go.mod'))) {
+  fs.rmSync(helperDistDir, { recursive: true, force: true });
+  fs.mkdirSync(helperDistDir, { recursive: true });
+
+  const outExe = path.join(helperDistDir, 'framesize-helper.exe');
+  execFileSync('go', ['build', `-ldflags=-s -w -X main.HelperVersion=${version}`, '-o', outExe, '.'], {
+    cwd: helperSrcDir,
+    env: {
+      ...process.env,
+      GOOS: 'windows',
+      GOARCH: 'amd64',
+      CGO_ENABLED: '0',
+    },
+    stdio: 'inherit',
+  });
+
+  for (const script of ['install.ps1', 'uninstall.ps1']) {
+    fs.copyFileSync(path.join(helperSrcDir, script), path.join(helperDistDir, script));
+  }
+
+  const helperZip = path.join(RELEASE_DIR, `framesize-helper-windows-x64-v${version}.zip`);
+  createZipFromDir(helperDistDir, helperZip);
+  const sizeKb = (fs.statSync(helperZip).size / 1024).toFixed(1);
+  console.log(`Packaged ${path.basename(helperZip)} (${sizeKb} KB)`);
 }

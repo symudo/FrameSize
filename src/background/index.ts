@@ -6,6 +6,13 @@ import {
   computeWindowPosition,
 } from '../shared/geometry';
 import { initializeStorageDefaults, loadAppData } from '../shared/storage';
+import {
+  getDevToolsState,
+  splitBrowserWithDevTools,
+  toggleDevToolsMinimize,
+  toggleDevToolsPin,
+  toggleDevToolsRollup,
+} from './devtools';
 import type {
   CurrentDimensions,
   FrameOverhead,
@@ -494,6 +501,19 @@ async function handleMessage(message: RuntimeMessage): Promise<unknown> {
       return undoResize();
     case 'MAXIMIZE_WINDOW':
       return maximizeWindow();
+    case 'GET_DEVTOOLS_STATE':
+      return getDevToolsState();
+    case 'TOGGLE_DEVTOOLS_PIN':
+      return toggleDevToolsPin();
+    case 'TOGGLE_DEVTOOLS_ROLLUP':
+      return toggleDevToolsRollup();
+    case 'TOGGLE_DEVTOOLS_MINIMIZE': {
+      return toggleDevToolsMinimize();
+    }
+    case 'SPLIT_DEVTOOLS': {
+      const workArea = message.screen ?? (await getCachedScreen());
+      return splitBrowserWithDevTools(message.direction, workArea, pushUndoSnapshot);
+    }
     default:
       return null;
   }
@@ -528,6 +548,19 @@ if (ext.commands?.onCommand) {
       }
       if (command === 'undo-resize') {
         await undoResize();
+        return;
+      }
+      if (command === 'toggle-devtools-pin') {
+        await toggleDevToolsPin();
+        return;
+      }
+      if (command === 'toggle-devtools-rollup') {
+        await toggleDevToolsRollup();
+        return;
+      }
+      if (command === 'split-devtools') {
+        const workArea = await getCachedScreen();
+        await splitBrowserWithDevTools('right', workArea, pushUndoSnapshot);
         return;
       }
       const match = /^apply-preset-(\d+)$/.exec(command);

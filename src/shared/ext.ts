@@ -15,6 +15,14 @@ export const isFirefox =
 export const isEdge =
   typeof navigator !== 'undefined' && /edg\//i.test(navigator.userAgent);
 
+export const NATIVE_HOST_NAME = 'dev.framesize.helper';
+
+export function getBrowserKind(): 'chrome' | 'edge' | 'firefox' {
+  if (isFirefox) return 'firefox';
+  if (isEdge) return 'edge';
+  return 'chrome';
+}
+
 /**
  * 获取会话级存储（用于 Undo 历史、边框差值缓存），
  * 若运行环境不支持 storage.session 则平滑回退到 storage.local。
