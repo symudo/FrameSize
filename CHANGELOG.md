@@ -2,6 +2,13 @@
 
 All notable changes to **FrameSize** are documented in this file.
 
+## [1.3.1] - 2026-11-24
+
+### Fixed
+- **消除 Popup 右侧多余滚动条**：将 `html / body / .app` 锁定在浏览器 `600px` 弹窗上限内（`overflow: hidden`），移除预设列表写死的 `max-height: 286px` 改为弹性自适应高度，彻底杜绝外层系统滚动条。
+- **优化预设列表单行紧凑排版**：采用「图标 + 名称 + 右侧等宽尺寸 + 徽标」现代单行样式（行高 `34px`），默认 8 项预设即使在展开 DevTools 快捷条时也可一屏完整展示、内外零滚动条；超出 9 项预设时仅在列表内部平滑滚动。
+- 为 Popup 顶部栏、受限提示条与 DevTools 快捷条补齐 `flex-shrink: 0` 防止超多预设时被压缩，并补充 Firefox 标准细滚动条样式（`scrollbar-width: thin`）。
+
 ## [1.3.0] - 2026-11-24
 
 ### Added

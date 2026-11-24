@@ -151,25 +151,18 @@ function renderPresets(): void {
     iconWrap.className = 'preset-icon';
     setIconContent(iconWrap, createDeviceIcon(preset.icon));
 
-    const info = document.createElement('div');
-    info.className = 'preset-info';
-
-    const titleRow = document.createElement('div');
-    titleRow.className = 'preset-title-row';
-
     const title = document.createElement('span');
     title.className = 'preset-title';
     title.textContent = preset.title;
-    titleRow.appendChild(title);
-
-    const meta = document.createElement('div');
-    meta.className = 'preset-meta';
-    meta.textContent = formatPresetDims(preset);
-
-    info.append(titleRow, meta);
+    title.title = preset.title;
 
     const right = document.createElement('div');
     right.className = 'preset-right';
+
+    const dimsEl = document.createElement('span');
+    dimsEl.className = 'preset-dims';
+    dimsEl.textContent = formatPresetDims(preset);
+    right.appendChild(dimsEl);
 
     if (preset.shortcut) {
       const kbd = document.createElement('span');
@@ -194,7 +187,7 @@ function renderPresets(): void {
     });
     right.appendChild(popBtn);
 
-    li.append(iconWrap, info, right);
+    li.append(iconWrap, title, right);
     li.addEventListener('click', () => {
       void applyPreset(preset.id, false);
     });
